@@ -4,7 +4,7 @@
 
 Apple Silicon, macOS 13+, Apple's Command Line Tools, Bash, make, a C compiler and Swift are required. Use `bash build.sh` from the repository root. Dependencies are vendored; no Homebrew/Python runtime or dependency download is required. Output: build/SwitchBench.app and SwitchBench-macOS-AppleSilicon.zip. The app uses a stable legacy bundle identifier to preserve existing SwitchPatch preferences.
 
-Run `bash test.sh` after a build. It generates private synthetic fixtures automatically, cleans them normally and compiles C/Swift regression runners. It can also accept explicit helper paths. Tests use synthetic keys, not production keysets. Build before test so the helpers exist.
+Run `bash test.sh` after a build. It generates private synthetic fixtures automatically, cleans them normally and compiles C/Swift regression runners. It can also accept explicit helper paths. Tests use synthetic keys, not production keysets. Build before test so the helpers exist. On Intel CI, build native helpers first and run tests before the arm64 cross-build; do not try to execute the cross-built arm64 helpers on an Intel Mac.
 
 `bash Tools/BuildCLI.sh` builds developer tools. `bash Tools/MakeAppearancePreviews.sh` builds isolated light/high-contrast QA copies using a compile-time-only appearance hook; production ignores the preview setting.
 
@@ -26,4 +26,4 @@ Sources contains the Swift app, task preparation/model and native compression wr
 4. Commit the tested source and run `bash Tools/PackageRelease.sh`. Create a tag matching the release and attach the app ZIP, corresponding source ZIP and SHA256SUMS from dist/. State signing/notarization and validation limits.
 5. Verify download hashes, source correspondence and clean git status. Never overwrite an existing published tag/release silently.
 
-CI builds and tests on an Apple Silicon hosted Mac runner. It does not run private game data, gameplay, the optional large/network suite or independent human UAT. Workflow changes require review. GitHub-generated source archives are convenient, but a curated corresponding-source ZIP accompanies binary releases.
+CI runs the complete synthetic regression suite natively on an Intel macOS hosted runner, then cross-compiles and verifies the arm64 app and both helpers. This avoids reliance on the capacity-constrained Apple Silicon hosted pool. The arm64 build is compiled and signature/architecture checked there, not executed on Intel. Native Apple Silicon execution remains a local acceptance check. It does not run private game data, gameplay, the optional large/network suite or independent human UAT. Workflow changes require review. GitHub-generated source archives are convenient, but a curated corresponding-source ZIP accompanies binary releases.

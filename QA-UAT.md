@@ -22,4 +22,4 @@ The processing suite exercises synthetic NCA rebuilding, original preservation, 
 
 ## Repeatable checks
 
-Run `bash build.sh` then `bash test.sh` from a clean checkout on Apple Silicon. This creates synthetic fixtures and requires no private game/key data. See docs/DEVELOPMENT.md for optional resource-heavy checks. CI configuration is supplied for supported hosted Mac hardware; only actual green workflow runs count as CI evidence.
+Run `bash build.sh` then `bash test.sh` from a clean checkout on Apple Silicon. This creates synthetic fixtures and requires no private game/key data. See docs/DEVELOPMENT.md for optional resource-heavy checks. CI now runs native Intel regression tests and separately cross-builds/verifies the arm64 release on an Intel Mac runner. This replaces an Apple Silicon hosted job that twice failed to acquire a runner before any steps ran. It does not claim hosted Apple Silicon execution; only actual green workflow runs count as CI evidence.

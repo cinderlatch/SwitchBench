@@ -5,17 +5,23 @@ mkdir -p build/module-cache
 export CLANG_MODULE_CACHE_PATH="$PWD/build/module-cache"
 export SWIFT_MODULECACHE_PATH="$PWD/build/module-cache"
 export MACOSX_DEPLOYMENT_TARGET=13.0
+# The distributable app and every native dependency target Apple Silicon, even on Intel CI.
+export SWITCHBENCH_TARGET_ARCH=arm64
+native_cc="clang -arch $SWITCHBENCH_TARGET_ARCH"
 bash Tools/MakeIcon.sh
 bash Tools/BuildNative.sh
 make -C Vendor/hactool clean_full > build/engine-clean.log 2>&1
-make -C Vendor/hactool -j4 > build/engine-build.log 2>&1
+make -C Vendor/hactool -j4 CC="$native_cc" > build/engine-build.log 2>&1
 make -C Vendor/hacPack clean_full > build/packer-clean.log 2>&1
-make -C Vendor/hacPack -j4 > build/packer-build.log 2>&1
+make -C Vendor/hacPack -j4 CC="$native_cc" > build/packer-build.log 2>&1
 staging=$(mktemp -d /private/tmp/switchpatch-build.XXXXXX)
 trap 'rm -rf "$staging"' EXIT
 app="$staging/SwitchBench.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers" "$app/Contents/Resources"
 swiftc -swift-version 5 -O -target arm64-apple-macosx13.0 -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Sources/WorkflowModel.swift Sources/UtilityView.swift Sources/App.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o "$app/Contents/MacOS/SwitchBench" -framework SwiftUI -framework AppKit
+for binary in Vendor/hactool/hactool Vendor/hacPack/hacpack "$app/Contents/MacOS/SwitchBench"; do
+    lipo "$binary" -verify_arch arm64
+done
 cp Vendor/hactool/hactool "$app/Contents/Helpers/hactool"
 cp Vendor/hacPack/hacpack "$app/Contents/Helpers/hacpack"
 cp Vendor/hacPack/LICENSE "$app/Contents/Resources/hacPack-LICENSE.txt"

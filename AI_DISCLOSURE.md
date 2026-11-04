@@ -4,6 +4,10 @@ SwitchBench was created with substantial assistance from **OpenAI Codex**, an AI
 
 The human maintainer supplied requirements, evaluated behavior, reported failures, selected the product direction, and confirmed gameplay/version results on their own Android emulator for earlier builds. The initial public repository and release preparation were also assisted by Codex.
 
+## Why the maintainer used Codex
+
+The maintainer is a non-developer who struggled to get Switch Game Merge Utility running directly on macOS and SAK running in a Mac virtual machine, potentially because of their own inexperience. Those two projects were the primary inspiration for working with Codex on a separately written native macOS utility. See [the origin story and upstream acknowledgements](CREDITS.md). This account describes the maintainer’s experience; it is not an assessment of those projects’ quality.
+
 ## What this does and does not establish
 
 - Automated tests, synthetic fixtures and agent-operated native checks are documented in QA-UAT.md. Those checks are useful evidence, not proof that all formats, games, devices or edge cases work.

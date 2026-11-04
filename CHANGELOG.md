@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Clarified upstream acknowledgements and named SAK and Switch Game Merge Utility as the primary inspirations, with the maintainer’s Mac/Codex origin story.
+- Moved hosted regression testing to Intel macOS and added explicit arm64 cross-compilation/architecture verification after repeated hosted Apple Silicon capacity failures.
+
 ## 0.6.0 — initial public release
 
 Previously developed locally as SwitchPatch, then SwitchBench. Historical version numbers are retained for continuity; earlier private builds are not represented as public releases.

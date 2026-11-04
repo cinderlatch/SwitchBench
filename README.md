@@ -10,6 +10,14 @@ A Mac workbench for Switch game files. Update, check, combine, convert, split, j
 
 [Download the latest release](https://github.com/cinderlatch/SwitchBench/releases/latest) · [User guide](docs/USER_GUIDE.md) · [Report a problem](https://github.com/cinderlatch/SwitchBench/issues/new/choose)
 
+## Why SwitchBench exists
+
+SwitchBench's primary inspirations are **[Switch Army Knife (SAK)](https://github.com/dezem/SAK)** by dezem and the SAK project team, and **[Switch Game Merge Utility](https://github.com/LordZeuss/switch-merge-utility)** by LordZeuss.
+
+As a non-developer, I had difficulty getting Switch Game Merge Utility running on my Mac and running SAK in a virtual machine on my Mac. Some of that may have been down to my own inexperience, rather than problems with those tools. I worked with OpenAI Codex to build a native macOS app for these workflows, first called SwitchPatch and later expanded into SwitchBench.
+
+I am grateful for the work those projects made available and the ideas they demonstrated. SwitchBench is a separately written native Mac app; no SAK or Switch Game Merge Utility application code is bundled here.
+
 ## Get started
 
 1. Download `SwitchBench-v0.6.0-macOS-AppleSilicon.zip` from Releases and unzip it.
@@ -62,16 +70,17 @@ bash test.sh
 
 The app is created at `build/SwitchBench.app`; a distributable ZIP is created in the repository root. The build uses bundled source and macOS frameworks; Homebrew, Python and a separate runtime compression tool are not required. Builds are locally signed. See [development notes](docs/DEVELOPMENT.md) for optional large-file/network checks and release steps.
 
-## Credits and licenses
+## Upstream projects and acknowledgements
 
-SwitchBench depends on substantial work by other developers:
+SwitchBench builds upon software created by the developers and upstream projects acknowledged below. They did not necessarily participate in SwitchBench’s development, review it, or endorse it. References to an upstream project’s authors or contributors refer to their work on that project, not direct contributions to SwitchBench.
 
-- **SciresM and hactool contributors** — archive inspection, extraction, patch materialization and verification (ISC).
-- **The-4n, DarkMatterCore and hacPack contributors** — archive rebuilding (GPL-2.0, with retained upstream notices).
-- **Mbed TLS contributors** — cryptography bundled by the helpers (Apache-2.0).
-- **Meta/Facebook and Zstandard contributors** — native compression decoding (BSD license).
-- **nicoboss and NSZ contributors** — public format documentation used as a reference.
-- **LordZeuss's switch-merge-utility** and **dezem's Switch Army Knife** — inspiration for solving these workflows on macOS; their application code is not bundled.
+The native app relies on the following upstream work:
+
+- **SciresM and the hactool project** — archive inspection, extraction, patch materialization and verification (ISC).
+- **The-4n, DarkMatterCore and the hacPack project** — archive rebuilding (GPL-2.0, with retained upstream notices).
+- **The Mbed TLS project** — cryptography bundled by the helpers (Apache-2.0).
+- **Meta/Facebook and the Zstandard project** — native compression decoding (BSD license).
+- **nicoboss and the NSZ project** — public format documentation used as a reference.
 
 See [CREDITS.md](CREDITS.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), and [Vendor/CHANGES.md](Vendor/CHANGES.md) for links, retained licenses and local modifications. Upstream names do not imply endorsement.
 
