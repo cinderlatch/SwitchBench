@@ -1,0 +1,23 @@
+name: Feature or usability request
+description: Explain the task or confusion you want to solve.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the real task and where the current workflow gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested change and alternatives
+    validations:
+      required: true
+  - type: textarea
+    id: usability
+    attributes:
+      label: Usability or accessibility context (optional)
+      description: Share only information you are comfortable making public.

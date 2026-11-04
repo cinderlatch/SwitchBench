@@ -1,0 +1,9 @@
+* text=auto
+*.swift text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.png binary
+*.icns binary
+# Preserve upstream bytes and keep dependency code out of project language statistics.
+Vendor/** -text linguist-vendored

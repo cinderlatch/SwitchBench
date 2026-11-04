@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting and safe support
+    url: https://github.com/cinderlatch/SwitchBench/blob/main/SUPPORT.md
+    about: Read this before sharing reports or requesting help.
+  - name: Private security reporting
+    url: https://github.com/cinderlatch/SwitchBench/security/advisories/new
+    about: Report vulnerabilities privately; see SECURITY.md if unavailable.

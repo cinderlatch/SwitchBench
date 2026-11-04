@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible problem without sharing private game/key data.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not attach games, firmware, keys, certificates or unredacted logs. Review exported reports for personal paths before sharing."
+  - type: input
+    id: version
+    attributes:
+      label: SwitchBench version
+      placeholder: "0.6.0"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: macOS version and Mac chip
+    validations:
+      required: true
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Affected tool
+      options:
+        - Update Games
+        - Check Files
+        - Combine Files
+        - Convert to NSP
+        - Split Large Files
+        - Join Split Files
+        - Shrink XCI Files
+        - App / navigation / other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps, expected result and actual result
+      description: Include formats and approximate sizes. Prefer a synthetic reproduction; commercial files and game identities are not required.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Redacted details (optional)
+      description: Review every path and message before posting. Never paste key values.

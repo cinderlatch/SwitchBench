@@ -1,0 +1,40 @@
+# Generated Mac files
+.DS_Store
+._*
+# Local build products and test output
+/build/
+/QAFixtures/
+*.o
+*.a
+*.dylib
+*.exe
+*.d
+*.pyc
+__pycache__/
+Vendor/hactool/hactool
+Vendor/hacPack/hacpack
+*.app/
+*.zip
+*.tar.gz
+*.log
+*-validation.json
+native-*.json
+release-checksums*.json
+release-source-files.json
+# Never commit games, production keys, local secrets or private temporary work
+*.keys
+*.nsp
+*.nsz
+*.xci
+*.xcz
+*.nca
+*.ncz
+*.tik
+*.cert
+.env
+.env.*
+.switchpatch-*/
+*.partial
+
+/dist/
+*.tmp
