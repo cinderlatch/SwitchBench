@@ -6,6 +6,8 @@ A Mac workbench for Switch game files. Update, check, combine, convert, split, j
 
 **Apple Silicon · macOS 13 or later · Free and open source**
 
+[![Build and test](https://github.com/cinderlatch/SwitchBench/actions/workflows/ci.yml/badge.svg)](https://github.com/cinderlatch/SwitchBench/actions/workflows/ci.yml)
+
 [Download the latest release](https://github.com/cinderlatch/SwitchBench/releases/latest) · [User guide](docs/USER_GUIDE.md) · [Report a problem](https://github.com/cinderlatch/SwitchBench/issues/new/choose)
 
 ## Get started
