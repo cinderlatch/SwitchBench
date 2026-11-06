@@ -1,6 +1,10 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
+#endif
+#if !os(Windows)
 import CommonCrypto
+#endif
 
 @_silgen_name("sp_zstd_create") private func zstdCreate() -> UnsafeMutableRawPointer?
 @_silgen_name("sp_zstd_free") private func zstdFree(_ pointer: UnsafeMutableRawPointer)
@@ -40,21 +44,33 @@ struct CompressedContent {
         if section.type == 1 { return data }
         var iv = section.counter
         for i in 0..<8 { iv[15-i] = UInt8(truncatingIfNeeded: (offset >> 4) >> (8*i)) }
+        // CTR offset may fall inside a cipher block at a compression-block boundary.
+        let prefix = Int(offset & 15)
+        let input = Data(repeating: 0, count: prefix) + data
+        #if os(Windows)
+        if input.isEmpty { return input }
+        var output = Data(count: input.count)
+        let result = section.key.withUnsafeBytes { key in iv.withUnsafeBytes { counter in
+            input.withUnsafeBytes { src in output.withUnsafeMutableBytes { dst in
+                windowsAESCTR(key.baseAddress, counter.baseAddress, src.baseAddress, dst.baseAddress, src.count)
+            }}
+        }}
+        guard result == 0 else { throw PatchError("Couldn’t restore the compressed game data.") }
+        return Data(output.dropFirst(prefix))
+        #else
         var cryptor: CCCryptorRef?
         let status = section.key.withUnsafeBytes { key in iv.withUnsafeBytes { counter in
             CCCryptorCreateWithMode(CCOperation(kCCEncrypt), CCMode(kCCModeCTR), CCAlgorithm(kCCAlgorithmAES), CCPadding(ccNoPadding), counter.baseAddress, key.baseAddress, 16, nil, 0, 0, CCModeOptions(kCCModeOptionCTR_BE), &cryptor)
         }}
         guard status == kCCSuccess, let cryptor else { throw PatchError("Couldn’t read the compressed game’s encryption settings.") }
         defer { CCCryptorRelease(cryptor) }
-        // CTR offset may fall inside a cipher block at a compression-block boundary.
-        let prefix = Int(offset & 15)
-        let input = Data(repeating: 0, count: prefix) + data
         var output = Data(count: input.count + 16), written = 0
         let result = output.withUnsafeMutableBytes { dst in input.withUnsafeBytes { src in
             CCCryptorUpdate(cryptor, src.baseAddress, input.count, dst.baseAddress, dst.count, &written)
         }}
         guard result == kCCSuccess, written == input.count else { throw PatchError("Couldn’t restore the compressed game data.") }
         return output.subdata(in: prefix..<written)
+        #endif
     }
     func extract(to target: URL, control: WorkControl, progress: (Double) -> Void) throws {
         _ = try process(to: target, control: control, progress: progress)

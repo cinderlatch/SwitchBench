@@ -10,12 +10,12 @@ CFLAGS += -D_BSD_SOURCE -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200112L -D_DEFAULT_SOU
 
 all:
 	cd mbedtls && $(MAKE) lib
-	$(MAKE) hacpack
+	$(MAKE) hacpack$(EXEEXT)
 
 .c.o:
 	$(CC) $(INCLUDE) -c $(CFLAGS) -o $@ $<
 
-hacpack: sha.o aes.o extkeys.o pki.o utils.o main.o filepath.o ConvertUTF.o nca.o romfs.o pfs0.o ivfc.o nacp.o npdm.o cnmt.o ticket.o rsa.o
+hacpack$(EXEEXT): sha.o aes.o extkeys.o pki.o utils.o main.o filepath.o ConvertUTF.o nca.o romfs.o pfs0.o ivfc.o nacp.o npdm.o cnmt.o ticket.o rsa.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lz -L $(LIBDIR)
 
 aes.o: aes.h types.h

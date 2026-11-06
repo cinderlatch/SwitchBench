@@ -1,6 +1,8 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
 import Darwin
+#endif
 
 @main struct CoreTests {
     static var passed = 0
@@ -62,6 +64,7 @@ import Darwin
         try rejects("missing explicitly selected key file fails instead of silently falling back") {
             _ = try engine.run(["-k", root.appendingPathComponent("missing.keys").path, "-t", "pfs0", "-i", output.path], working: root)
         }
+        #if !os(Windows)
         var beforeMemory = rusage(); getrusage(0, &beforeMemory)
         let memoryCopy = root.appendingPathComponent("memory-test-copy")
         for _ in 0..<32 {
@@ -70,6 +73,7 @@ import Darwin
         }
         var afterMemory = rusage(); getrusage(0, &afterMemory)
         try expect(afterMemory.ru_maxrss - beforeMemory.ru_maxrss < 64 * 1024 * 1024, "repeated streamed copies release temporary buffers instead of accumulating job data")
+        #endif
         let originalHash = SHA256.hash(data: try Data(contentsOf: output))
         try rejects("existing output is never overwritten") { try PatchEngine.pack([one], to: output, control: control) { _ in } }
         try expect(SHA256.hash(data: try Data(contentsOf: output)) == originalHash, "existing output unchanged")
@@ -110,8 +114,10 @@ import Darwin
         let job = PatchJob(base: base, update: update), titles = root.appendingPathComponent("title.keys")
         try engine.titleKeys(for: job, at: titles)
         try expect(try String(contentsOf: titles, encoding: .utf8).contains(String(repeating: "ab", count: 16)), "common tickets supply encrypted title keys locally")
+        #if !os(Windows)
         let permissions = try fm.attributesOfItem(atPath: titles.path)[.posixPermissions] as! NSNumber
         try expect(permissions.intValue == 0o600, "temporary title-key file is owner only")
+        #endif
         let personalURL = root.appendingPathComponent("personal.nsp")
         try archive(["program.nca", "personal.tik", "meta.cnmt.nca"], [nca(0x0100000000001000, rights: rights), ticket(rights: rights, personalized: true), nca(0x0100000000001000, contentType: 1)], to: personalURL)
         let personal = try engine.inspect(personalURL)
@@ -129,7 +135,7 @@ import Darwin
         let originalApp = root.appendingPathComponent("OriginalApp")
         let originalHelpers = originalApp.appendingPathComponent("Contents/Helpers")
         try fm.createDirectory(at: originalHelpers, withIntermediateDirectories: true)
-        let originalEngine = originalHelpers.appendingPathComponent("hactool"), originalPacker = originalHelpers.appendingPathComponent("hacpack")
+        let originalEngine = originalHelpers.appendingPathComponent("hactool" + HelperSession.executableSuffix), originalPacker = originalHelpers.appendingPathComponent("hacpack" + HelperSession.executableSuffix)
         try fm.copyItem(at: engineURL, to: originalEngine)
         try fm.copyItem(at: URL(fileURLWithPath: CommandLine.arguments[2]), to: originalPacker)
         let pinned = try HelperSession(executable: originalEngine, parent: root)
@@ -143,7 +149,9 @@ import Darwin
         try expect(batchInspected == 9, "all nine jobs retain working helpers after the app is moved after job two")
         try expect(!fm.fileExists(atPath: originalEngine.path) && !fm.fileExists(atPath: originalPacker.path), "regression fixture removes the original helper paths")
         try pinned.validate()
+        #if !os(Windows)
         try expect((try fm.attributesOfItem(atPath: pinned.directory.path)[.posixPermissions] as! NSNumber).intValue == 0o700, "runtime helper directory is private")
+        #endif
         try rejects("missing helper is caught before a batch can start") {
             _ = try HelperSession(executable: pinned.executable, packer: root.appendingPathComponent("missing-hacpack"), parent: root)
         }
@@ -157,7 +165,9 @@ import Darwin
         }
         let reportText = try String(contentsOf: reportFile, encoding: .utf8)
         try expect(reportText.contains("9 succeeded") && reportText.contains("[redacted]"), "batch report persists results and redacts key-like text")
+        #if !os(Windows)
         try expect((try fm.attributesOfItem(atPath: reportFile.path)[.posixPermissions] as! NSNumber).intValue == 0o600, "saved batch report is owner only")
+        #endif
         // Build a real minimal NCA-based NSP using the actual packer and verify it with hactool.
         let rebuiltRoot = root.appendingPathComponent("rebuild")
         let rebuiltPayload = rebuiltRoot.appendingPathComponent("payload")

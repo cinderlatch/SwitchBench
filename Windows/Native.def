@@ -1,0 +1,13 @@
+LIBRARY SwitchBenchNative.dll
+EXPORTS
+    sp_zstd_create
+    sp_zstd_free
+    sp_zstd_decode
+    sp_zstd_encode
+    sp_sha_create
+    sp_sha_update
+    sp_sha_digest
+    sp_sha_free
+    sp_aes_ctr
+    sp_inflate_raw
+    sp_publish

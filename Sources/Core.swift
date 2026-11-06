@@ -1,5 +1,7 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
+#endif
 
 struct PatchError: LocalizedError {
     let message: String
@@ -122,19 +124,26 @@ struct HelperUnavailableError: LocalizedError {
 
 /// Keep executable resources independent of the app's original location for the entire session.
 final class HelperSession: @unchecked Sendable {
+    #if os(Windows)
+    static let executableSuffix = ".exe"
+    #else
+    static let executableSuffix = ""
+    #endif
     let directory: URL
     let executable: URL
     let packer: URL
     init(executable source: URL, packer sourcePacker: URL? = nil, parent: URL = FileManager.default.temporaryDirectory) throws {
         let fm = FileManager.default
-        let sources = [source, sourcePacker ?? source.deletingLastPathComponent().appendingPathComponent("hacpack")]
+        let sources = [source, sourcePacker ?? source.deletingLastPathComponent().appendingPathComponent("hacpack" + HelperSession.executableSuffix)]
         for file in sources where !fm.isExecutableFile(atPath: file.path) { throw HelperUnavailableError(url: file) }
         let directory = try PatchEngine.privateDirectory(in: parent)
         do {
             for (index, file) in sources.enumerated() {
-                let target = directory.appendingPathComponent(index == 0 ? "hactool" : "hacpack")
+                let target = directory.appendingPathComponent((index == 0 ? "hactool" : "hacpack") + Self.executableSuffix)
                 try fm.copyItem(at: file.resolvingSymlinksInPath(), to: target)
+                #if !os(Windows)
                 try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: target.path)
+                #endif
                 guard fm.isExecutableFile(atPath: target.path) else { throw HelperUnavailableError(url: target) }
             }
         } catch {
@@ -142,8 +151,8 @@ final class HelperSession: @unchecked Sendable {
             throw error
         }
         self.directory = directory
-        executable = directory.appendingPathComponent("hactool")
-        packer = directory.appendingPathComponent("hacpack")
+        executable = directory.appendingPathComponent("hactool" + Self.executableSuffix)
+        packer = directory.appendingPathComponent("hacpack" + HelperSession.executableSuffix)
     }
     func validate() throws {
         for file in [executable, packer] where !FileManager.default.isExecutableFile(atPath: file.path) { throw HelperUnavailableError(url: file) }
@@ -176,7 +185,7 @@ final class PatchEngine: @unchecked Sendable {
     let control: WorkControl
     let event: (String, Double?) -> Void
     init(executable: URL, keys: URL, extraTitleKeys: URL? = nil, packer: URL? = nil, control: WorkControl, event: @escaping (String, Double?) -> Void) {
-        self.executable = executable; self.keys = keys; self.packer = packer ?? executable.deletingLastPathComponent().appendingPathComponent("hacpack"); self.extraTitleKeys = extraTitleKeys; self.control = control; self.event = event
+        self.executable = executable; self.keys = keys; self.packer = packer ?? executable.deletingLastPathComponent().appendingPathComponent("hacpack" + HelperSession.executableSuffix); self.extraTitleKeys = extraTitleKeys; self.control = control; self.event = event
     }
     static func privateDirectory(in parent: URL) throws -> URL {
         let url = parent.appendingPathComponent(".switchpatch-\(UUID().uuidString)")
@@ -195,7 +204,18 @@ final class PatchEngine: @unchecked Sendable {
             throw PatchError("The temporary working folder disappeared. Restart this batch.")
         }
         let process = Process(), pipe = Pipe()
-        process.executableURL = selectedTool; process.arguments = args
+        process.executableURL = selectedTool
+        #if os(Windows)
+        process.arguments = args.map { argument in
+            let components = argument.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            let value = String(components.last ?? "")
+            let drive = value.utf8.dropFirst(value.hasPrefix("/") ? 1 : 0).dropFirst().first == 58
+            guard drive || value.hasPrefix("//") || value.hasPrefix("\\\\") else { return argument }
+            return (components.count == 2 ? String(components[0]) + "=" : "") + windowsPath(value)
+        }
+        #else
+        process.arguments = args
+        #endif
         process.currentDirectoryURL = working
         process.standardOutput = pipe; process.standardError = pipe
         do { try process.run() } catch {
@@ -552,10 +572,15 @@ final class PatchEngine: @unchecked Sendable {
             }
             guard hasher.finalize() == hashes[index] else { throw PatchError("Output verification failed: checksum mismatch.") }
         }
+        try input.close()
         try control.check()
         // A same-directory move publishes the verified file without requiring hard-link support.
         // FileManager refuses an existing destination, including one created during verification.
+        #if os(Windows)
+        try publishWindowsFile(temp, to: destination)
+        #else
         try fm.moveItem(at: temp, to: destination)
+        #endif
         progress(1)
     }
 }

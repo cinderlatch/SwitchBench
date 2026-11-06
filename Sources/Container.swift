@@ -1,5 +1,7 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
+#endif
 
 struct ContainerLayout {
     let entries: [PFSEntry]

@@ -1,5 +1,7 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
+#endif
 
 enum UtilityTool: String, CaseIterable, Identifiable, Codable {
     case update, inspect, combine, convert, split, join, trim
@@ -335,7 +337,11 @@ final class PreparationEngine {
         case .inspect:throw TaskIssue(.input,"Checking content doesn’t create a new file.")
         }
         try engine.control.check()
+        #if os(Windows)
+        try publishWindowsFile(result, to: destination)
+        #else
         try FileManager.default.moveItem(at:result,to:destination)
+        #endif
         return destination
     }
 }

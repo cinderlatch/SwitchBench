@@ -1,6 +1,10 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
+#endif
+#if !os(Windows)
 import zlib
+#endif
 
 enum ContentRole: String { case game = "Game", update = "Update", addon = "Add-on pack", other = "Other content" }
 struct ContentRecord { let hash: Data; let id: String; let size: UInt64; let type: UInt8 }
@@ -68,7 +72,15 @@ final class UtilityEngine: @unchecked Sendable {
         if nacp[0x3215] == 1 {
             let size = Int(try nacp.number(0, 2))
             guard size > 0, size <= 0x2FFE else { throw PatchError("The game’s compressed title information is invalid.") }
-            let src = nacp.subdata(in: 2..<(2+size)); var out = Data(count: 32*0x300), stream = z_stream()
+            let src = nacp.subdata(in: 2..<(2+size)); var out = Data(count: 32*0x300)
+            #if os(Windows)
+            let written = src.withUnsafeBytes { input in out.withUnsafeMutableBytes { dst in
+                windowsInflate(input.baseAddress, input.count, dst.baseAddress, dst.count)
+            }}
+            guard written > 0, written % 0x300 == 0 else { throw PatchError("The compressed game title couldn’t be read.") }
+            names = Data(out.prefix(written))
+            #else
+            var stream = z_stream()
             guard inflateInit2_(&stream, -MAX_WBITS, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else { throw PatchError("Couldn’t read the game title.") }
             defer { inflateEnd(&stream) }
             let result = out.withUnsafeMutableBytes { dst in src.withUnsafeBytes { input -> Int32 in
@@ -78,6 +90,7 @@ final class UtilityEngine: @unchecked Sendable {
             }}
             guard result == Z_STREAM_END, stream.avail_in == 0, stream.total_out > 0, stream.total_out % 0x300 == 0 else { throw PatchError("The compressed game title couldn’t be read.") }
             names = Data(out.prefix(Int(stream.total_out)))
+            #endif
         } else if nacp[0x3215] != 0 { throw PatchError("This game uses a newer title-information format.") }
         for index in 0..<(names.count/0x300) {
             let text = names[(index*0x300)..<(index*0x300+0x200)].prefix { $0 != 0 }

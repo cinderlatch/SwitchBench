@@ -1,5 +1,7 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
+#endif
 
 struct FileSpan { let url: URL; let offset: UInt64; let size: UInt64 }
 struct JoinPlan { let name: String; let spans: [FileSpan]; let expectedHash: String?; var size: UInt64 { spans.reduce(0) { $0+$1.size } } }
@@ -36,7 +38,12 @@ extension UtilityEngine {
         let readback = try Self.hash(temp, control: control) { self.event("Checking the saved file",0.6+$0*0.4) }.hex
         guard readback == hash else { throw PatchError("The saved copy failed its readback check.") }
         if validateContainer { _ = try ContainerLayout(temp) }
-        try control.check(); try fm.moveItem(at: temp, to: destination)
+        try control.check()
+        #if os(Windows)
+        try publishWindowsFile(temp, to: destination)
+        #else
+        try fm.moveItem(at: temp, to: destination)
+        #endif
         return hash
     }
     func trim(_ input: URL, folder: URL) throws -> URL {
@@ -79,7 +86,12 @@ extension UtilityEngine {
         }
         let manifest = SplitManifest(version: 1, originalName: input.lastPathComponent, size: size, sha256: Data(fullHash.finalize()).hex, parts: parts)
         try JSONEncoder().encode(manifest).write(to: temp.appendingPathComponent("SwitchBench Parts.json"))
-        try control.check(); try fm.moveItem(at: temp, to: output)
+        try control.check()
+        #if os(Windows)
+        try publishWindowsFile(temp, to: output)
+        #else
+        try fm.moveItem(at: temp, to: output)
+        #endif
         return output
     }
     func joinPlan(_ selected: URL, verifyParts: Bool = false) throws -> JoinPlan {
