@@ -37,7 +37,8 @@ private struct Event: Encodable {
             }
             let request = try JSONDecoder().decode(Request.self, from: Data(line.utf8))
             DispatchQueue.global().async {
-                if readLine() == "stop" { control.cancel() }
+                let command = readLine()
+                if command == "stop" || command == nil { control.cancel() }
             }
             try perform(request, control: control)
         } catch {

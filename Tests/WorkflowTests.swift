@@ -3,7 +3,7 @@ import Foundation
 @main struct WorkflowTests {
     static func main() throws {
         var passed=0
-        func expect(_ ok:@autoclosure () throws -> Bool,_ name:String) throws { guard try ok() else { throw PatchError("FAIL: "+name) };passed += 1;print("PASS: "+name);fflush(stdout) }
+        func expect(_ ok:@autoclosure () throws -> Bool,_ name:String) throws { guard try ok() else { throw PatchError("FAIL: "+name) };passed += 1;print("PASS: "+name) }
         let fm=FileManager.default,fixtures=URL(fileURLWithPath:CommandLine.arguments[2]),helper=URL(fileURLWithPath:CommandLine.arguments[1])
         let root=try PatchEngine.privateDirectory(in:fm.temporaryDirectory);defer {try? fm.removeItem(at:root)}
         let keys=fixtures.appendingPathComponent("test-prod.keys"),game=fixtures.appendingPathComponent("Sample Game.nsp"),addon=fixtures.appendingPathComponent("Sample Add-on.nsp"),xci=fixtures.appendingPathComponent("Sample Cartridge.xci")

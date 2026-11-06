@@ -103,7 +103,11 @@ extension UtilityEngine {
         let manifestURL = fm.fileExists(atPath:currentManifest.path) ? currentManifest : parent.appendingPathComponent("SwitchPatch Parts.json")
         var spans: [FileSpan] = [], expected: String?, name: String
         func validName(_ name: String) -> Bool {
-            !name.isEmpty && name != "." && name != ".." && !name.contains("/") && !name.contains("\\") && !name.unicodeScalars.contains { $0.value < 32 }
+            #if os(Windows)
+            return windowsSafeName(name)
+            #else
+            return !name.isEmpty && name != "." && name != ".." && !name.contains("/") && !name.contains("\\") && !name.unicodeScalars.contains { $0.value < 32 }
+            #endif
         }
         if fm.fileExists(atPath: manifestURL.path) {
             let attr = try fm.attributesOfItem(atPath: manifestURL.path)

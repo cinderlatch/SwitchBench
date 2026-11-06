@@ -1,6 +1,8 @@
 import Foundation
+#if !os(Windows)
 import CryptoKit
 import CommonCrypto
+#endif
 
 @main struct UtilityTests {
     static var passed = 0
@@ -45,11 +47,27 @@ import CommonCrypto
             counters.append(counter.prefix(8));let value=(offset>>4)+UInt64(i)
             for b in (0..<8).reversed() { counters.append(UInt8(truncatingIfNeeded:value>>(b*8))) }
         }
+        #if os(Windows)
+        let zero = Data(repeating: 0, count: 16)
+        var stream = Data(count: counters.count)
+        // Encrypt individually constructed counters to check the streaming CTR offsets.
+        for block in 0..<blocks {
+            let counter = counters.subdata(in: (block*16)..<((block+1)*16))
+            let result = key.withUnsafeBytes { key in counter.withUnsafeBytes { counter in
+                zero.withUnsafeBytes { input in stream.withUnsafeMutableBytes { output in
+                    windowsAESCTR(key.baseAddress, counter.baseAddress, input.baseAddress,
+                                  output.baseAddress?.advanced(by: block*16), 16)
+                }}
+            }}
+            precondition(result == 0)
+        }
+        #else
         var stream=Data(count:counters.count+16);var written=0
         let status=stream.withUnsafeMutableBytes { dst in counters.withUnsafeBytes { src in key.withUnsafeBytes { k in
             CCCrypt(CCOperation(kCCEncrypt),CCAlgorithm(kCCAlgorithmAES),CCOptions(kCCOptionECBMode),k.baseAddress,16,nil,src.baseAddress,counters.count,dst.baseAddress,dst.count,&written)
         }}}
         precondition(status==kCCSuccess)
+        #endif
         return Data(data.enumerated().map { $0.element ^ stream[prefix+$0.offset] })
     }
     static func ncz(_ plain:Data,block:Bool,crypto:Bool,rawAlternate:Bool=false)->(Data,Data) {

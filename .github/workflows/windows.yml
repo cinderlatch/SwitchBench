@@ -30,3 +30,11 @@ jobs:
       - name: Build worker and run shared engine tests
         shell: pwsh
         run: ./Windows/build.ps1 -Test
+      - name: Test the portable package
+        shell: pwsh
+        run: ./Windows/package.ps1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: SwitchBench-Windows-x64
+          path: build/windows/SwitchBench-Windows-x64.zip
+          if-no-files-found: error

@@ -6,10 +6,18 @@ import CryptoKit
 import CommonCrypto
 #endif
 
+#if os(Windows)
+import SwitchBenchNative
+private let zstdCreate = sp_zstd_create
+private let zstdFree = sp_zstd_free
+private let zstdDecode = sp_zstd_decode
+let zstdEncode = sp_zstd_encode
+#else
 @_silgen_name("sp_zstd_create") private func zstdCreate() -> UnsafeMutableRawPointer?
 @_silgen_name("sp_zstd_free") private func zstdFree(_ pointer: UnsafeMutableRawPointer)
 @_silgen_name("sp_zstd_decode") private func zstdDecode(_ ctx: UnsafeMutableRawPointer, _ src: UnsafeRawPointer?, _ length: Int, _ consumed: UnsafeMutablePointer<Int>, _ dst: UnsafeMutableRawPointer?, _ capacity: Int, _ produced: UnsafeMutablePointer<Int>) -> Int
 @_silgen_name("sp_zstd_encode") func zstdEncode(_ src: UnsafeRawPointer?, _ length: Int, _ dst: UnsafeMutableRawPointer?, _ capacity: Int, _ level: Int32) -> Int
+#endif
 
 struct CompressedContent {
     struct Section { let offset: UInt64; let size: UInt64; let type: UInt64; let key: Data; let counter: Data }

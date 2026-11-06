@@ -314,6 +314,9 @@ final class PreparationEngine {
     func execute(_ tool:UtilityTool,plan:TaskPlan,folder:URL) throws -> URL {
         try engine.control.check()
         guard let name=plan.outputName,!name.isEmpty,name != ".",name != "..",!name.contains("/"),!name.contains("\\") else { throw TaskIssue(.destination,"Choose a valid output filename.") }
+        #if os(Windows)
+        guard windowsSafeName(name) else { throw TaskIssue(.destination,"Windows can’t use the planned output name. Shorten the original filename.") }
+        #endif
         let destination=folder.appendingPathComponent(name)
         guard !FileManager.default.fileExists(atPath:destination.path) else { throw TaskIssue(.collision,"A file with this name already exists. Choose another name or folder.") }
         for (url,stamp) in plan.sourceStamps { guard try FileStamp(url)==stamp else { throw TaskIssue(.input,"An input changed after it was added. Read the files again before continuing.") } }

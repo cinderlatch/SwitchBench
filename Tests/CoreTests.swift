@@ -43,6 +43,15 @@ import Darwin
         return d
     }
     static func main() throws {
+        do {
+            try exercise()
+        } catch {
+            let diagnostic = PatchEngine.scrub(error.localizedDescription)
+            try? FileHandle.standardError.write(contentsOf: Data((diagnostic + "\n").utf8))
+            throw error
+        }
+    }
+    static func exercise() throws {
         let fm = FileManager.default
         let root = try PatchEngine.privateDirectory(in: fm.temporaryDirectory); defer { try? fm.removeItem(at: root) }
         let engineURL = URL(fileURLWithPath: CommandLine.arguments[1])

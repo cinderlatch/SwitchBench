@@ -207,7 +207,7 @@ final class PatchEngine: @unchecked Sendable {
         process.executableURL = selectedTool
         #if os(Windows)
         process.arguments = args.map { argument in
-            let components = argument.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            let components = argument.hasPrefix("--") ? argument.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false) : [argument[...]]
             let value = String(components.last ?? "")
             let drive = value.utf8.dropFirst(value.hasPrefix("/") ? 1 : 0).dropFirst().first == 58
             guard drive || value.hasPrefix("//") || value.hasPrefix("\\\\") else { return argument }

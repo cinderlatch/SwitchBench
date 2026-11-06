@@ -14,3 +14,11 @@ make -C Vendor/zstd-1.5.7/lib -j4 CC=gcc libzstd.a
 gcc -O2 -static -shared -o "$out/SwitchBenchNative.dll" Windows/Native.c Sources/NativeCompression.c \
     -IVendor/hactool/mbedtls/include Vendor/hactool/mbedtls/library/libmbedcrypto.a \
     Vendor/zstd-1.5.7/lib/libzstd.a -lz Windows/Native.def
+
+# The packaged license is the one shipped by the actual zlib build.
+license=$(pacman -Ql mingw-w64-ucrt-x86_64-zlib | awk '$2 ~ /\/share\/licenses\/.*\/(LICENSE|COPYING)(\.txt)?$/ { print $2; exit }')
+if [ -n "$license" ]; then
+    cp "$license" "$out/zlib-license.txt"
+else
+    head -n 30 /ucrt64/include/zlib.h > "$out/zlib-license.txt"
+fi

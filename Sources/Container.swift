@@ -36,6 +36,9 @@ struct ContainerLayout {
                       !name.unicodeScalars.contains(where: { $0.value < 32 }), names.insert(name.lowercased()).inserted else {
                     throw PatchError("A game file contains an unsafe or repeated filename.")
                 }
+                #if os(Windows)
+                guard windowsSafeName(name) else { throw PatchError("This game package contains a filename Windows can’t safely open.") }
+                #endif
                 guard relative <= length - headerSize, bytes <= length - headerSize - relative else { throw PatchError("Part of this game file is missing.") }
                 found.append(PFSEntry(name: name, offset: offset + headerSize + relative, size: bytes))
             }

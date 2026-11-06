@@ -1,0 +1,4 @@
+module SwitchBenchNative {
+    header "Native.h"
+    export *
+}
