@@ -6,7 +6,7 @@ out="$PWD/build/windows"
 # Windows 11 supplies the UCRT. Statically link the MinGW support code and zlib.
 printf '1 24 "%s/Windows/HelperManifest.xml"\n' "$(cygpath -m "$PWD")" > "$out/helper.rc"
 windres "$out/helper.rc" -o "$out/helper-manifest.o"
-link_flags="-static -lmbedtls -lmbedx509 -lmbedcrypto $out/helper-manifest.o"
+link_flags="-static -lmbedtls -lmbedx509 -lmbedcrypto ../../build/windows/helper-manifest.o"
 make -C Vendor/hactool -j4 EXEEXT=.exe CC=gcc LDFLAGS="$link_flags"
 make -C Vendor/hacPack -j4 EXEEXT=.exe CC=gcc LDFLAGS="$link_flags"
 cp Vendor/hactool/hactool.exe Vendor/hacPack/hacpack.exe "$out/"

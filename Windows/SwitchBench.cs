@@ -387,35 +387,43 @@ internal sealed class BenchWindow : Form
         {
             try
             {
-                process.Start();
-                worker = process;
-                RefreshButtons();
-                var diagnostics = process.StandardError.ReadToEndAsync();
-                WriteRequest(request);
-                string line;
-                bool finished = false;
-                while ((line = await process.StandardOutput.ReadLineAsync()) != null)
+                bool interrupted = false;
+                try
                 {
-                    var entry = json.Deserialize<WorkerEvent>(line);
-                    Receive(entry);
-                    finished |= entry.kind == "finished" || entry.kind == "error";
+                    process.Start();
+                    worker = process;
+                    RefreshButtons();
+                    var diagnostics = process.StandardError.ReadToEndAsync();
+                    WriteRequest(request);
+                    string line;
+                    bool finished = false;
+                    while ((line = await process.StandardOutput.ReadLineAsync()) != null)
+                    {
+                        var entry = json.Deserialize<WorkerEvent>(line);
+                        Receive(entry);
+                        finished |= entry.kind == "finished" || entry.kind == "error";
+                    }
+                    await Task.Run(delegate { process.WaitForExit(); });
+                    if (!finished || process.ExitCode != 0)
+                    {
+                        status.Text = "SwitchBench’s processing component stopped unexpectedly.";
+                        var report = await diagnostics;
+                        details.Text = report.Length > 4000 ? report.Substring(report.Length - 4000) : report;
+                    }
                 }
-                await Task.Run(delegate { process.WaitForExit(); });
-                if (!finished || process.ExitCode != 0)
+                catch (Exception error)
                 {
-                    status.Text = "SwitchBench’s processing component stopped unexpectedly.";
-                    var report = await diagnostics;
-                    details.Text = report.Length > 4000 ? report.Substring(report.Length - 4000) : report;
+                    status.Text = "SwitchBench couldn’t complete this task.";
+                    details.Text = error.Message;
+                    interrupted = worker != null;
                 }
-            }
-            catch (Exception error)
-            {
-                status.Text = "SwitchBench couldn’t complete this task.";
-                details.Text = error.Message;
-                // Closing the request pipe also asks the worker to stop.
-                if (worker != null)
+                if (interrupted)
                 {
-                    process.StandardInput.Close();
+                    // Closing the request pipe asks the worker to stop. Keep
+                    // draining its output until it has cleaned up.
+                    try { process.StandardInput.Close(); }
+                    catch (IOException) { }
+                    await process.StandardOutput.ReadToEndAsync();
                     await Task.Run(delegate { process.WaitForExit(); });
                 }
             }
