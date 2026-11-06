@@ -36,3 +36,7 @@ The app rebuilds normal program/control/meta NCAs and verifies their hashes with
 - Public release preparation marks modified helper files with a dated SwitchBench notice. The archived upstream baselines were independently matched against the SHA-256 records before listing differences.
 - Files differing from those original archives: hactool/main.c, nca.c, nca.h; hacPack/Makefile, ivfc.h, nacp.c, romfs.c. Local config.mk files select the Mac compiler/link settings. Upstream dependency sources and notices are preserved.
 - No exact upstream commit was recorded for the original moving master archives. The checksummed baseline archives and complete vendored release source are the provenance record; no revision is invented.
+
+## Windows preview
+
+The Windows build uses hacPack’s existing Windows filesystem support and sets its executable suffix explicitly in the Makefile. The build embeds a UTF-8 code page manifest in both processing helpers so Windows filenames can be passed through their existing command-line interfaces.

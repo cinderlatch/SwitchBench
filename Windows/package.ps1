@@ -31,6 +31,8 @@ foreach ($component in $swiftComponents.Keys) {
     Invoke-WebRequest -Uri $url -OutFile "$licenses/$component.txt"
 }
 
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/unicode-org/icu/release-76-1/LICENSE' -OutFile "$licenses/ICU-76.1.txt"
+
 # Test from the packaged folder with only system locations on PATH.
 $previousPath = $env:Path
 try {

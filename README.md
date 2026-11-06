@@ -2,13 +2,13 @@
 
 # SwitchBench
 
-A Mac workbench for Switch game files. Update, check, combine, convert, split, join, and shrink files in one native app.
+A desktop workbench for Switch game files. Update, check, combine, convert, split, join, and shrink files in one app.
 
-**Apple Silicon · macOS 13 or later · Free and open source**
+**macOS 13+ on Apple Silicon · Windows 11 x64 preview · Free and open source**
 
 [![Build and test](https://github.com/cinderlatch/SwitchBench/actions/workflows/ci.yml/badge.svg)](https://github.com/cinderlatch/SwitchBench/actions/workflows/ci.yml)
 
-[Download the latest release](https://github.com/cinderlatch/SwitchBench/releases/latest) · [User guide](docs/USER_GUIDE.md) · [Report a problem](https://github.com/cinderlatch/SwitchBench/issues/new/choose)
+[Download for macOS](https://github.com/cinderlatch/SwitchBench/releases/latest) · [Windows preview](https://github.com/cinderlatch/SwitchBench/releases/tag/v0.7.0-windows.1) · [Windows guide](docs/WINDOWS.md) · [Mac user guide](docs/USER_GUIDE.md) · [Report a problem](https://github.com/cinderlatch/SwitchBench/issues/new/choose)
 
 ## Why SwitchBench exists
 
@@ -18,7 +18,11 @@ As a non-developer, I had difficulty getting Switch Game Merge Utility running o
 
 I am grateful for the work those projects made available and the ideas they demonstrated. SwitchBench is a separately written native Mac app; no SAK or Switch Game Merge Utility application code is bundled here.
 
-## Get started
+## Get started on Windows
+
+Download the Windows preview ZIP, extract it, and open **SwitchBench.exe**. The native Windows interface offers the seven tools with the same processing engine as the Mac app. See the [Windows guide](docs/WINDOWS.md) for setup and build instructions.
+
+## Get started on macOS
 
 1. Download `SwitchBench-v0.6.0-macOS-AppleSilicon.zip` from Releases and unzip it.
 2. Move **SwitchBench.app** to Applications and open it.
@@ -45,7 +49,7 @@ Every tool provides preparation, clear results and recovery beside the affected 
 
 **Update vs Combine:** Update applies the update to the game content. Combine puts the original content together in one package. Choose Update when you need an updated standalone copy.
 
-## Requirements and limits
+## macOS requirements and shared limits
 
 - Apple Silicon Mac, macOS 13+. An emulator is not required to process files.
 - Your own compatible `prod.keys` for Update, Check and Combine. Additional title keys are requested only when needed. Keys remain local.
@@ -57,7 +61,7 @@ Every tool provides preparation, clear results and recovery beside the affected 
 
 See [the user guide](docs/USER_GUIDE.md), [troubleshooting](docs/TROUBLESHOOTING.md), [privacy](PRIVACY.md), and [validation and limitations](QA-UAT.md).
 
-## Build from source
+## Build on macOS
 
 Install Apple's Command Line Tools (`xcode-select --install`) and use an Apple Silicon Mac:
 

@@ -16,3 +16,7 @@ System frameworks and zlib are provided by macOS, not redistributed as standalon
 The helper processes are distinct executables. Their modified source, makefiles and bundled dependencies are included, rather than relying on a future written source offer. Local changes are listed in [Vendor/CHANGES.md](Vendor/CHANGES.md). Original upstream copyright and license texts remain unchanged.
 
 The vendored Mbed TLS upstream tests include publicly distributed test certificates and private test keys. They are upstream synthetic fixtures, not user credentials, and must never be used as production credentials. Their presence is intentional; no user keysets are included.
+
+## Windows runtime
+
+The portable Windows package includes the Swift 6.3.3 runtime, Foundation, and Dispatch under the Swift project's Apache 2.0 license with its runtime library exception. It includes ICU 76.1 from Unicode and zlib from the MSYS2 UCRT64 toolchain. Their notices accompany the download in Licenses. The helper builds use MinGW-w64 and the Windows UCRT. Microsoft Visual C++ runtime files, where bundled, are distributed from Visual Studio's redistributable directory.
