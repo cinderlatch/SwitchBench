@@ -14,7 +14,7 @@ size_t sp_zstd_decode(void *ctx, const void *src, size_t length, size_t *consume
     *consumed = input.pos; *produced = output.pos;
     return ZSTD_isError(result) ? SIZE_MAX : result;
 }
-/* Independent synthetic fixtures and round-trip tests use the upstream encoder. */
+/* Encode an independent Zstandard block. */
 size_t sp_zstd_encode(const void *src, size_t length, void *dst, size_t capacity, int level) {
     size_t result = ZSTD_compress(dst, capacity, src, length, level);
     return ZSTD_isError(result) ? SIZE_MAX : result;

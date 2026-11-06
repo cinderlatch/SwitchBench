@@ -11,7 +11,7 @@ $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Componen
 $msvc = Get-ChildItem "$vs/VC/Tools/MSVC" -Directory | Sort-Object Name -Descending | Select-Object -First 1
 & "$($msvc.FullName)/bin/Hostx64/x64/lib.exe" /nologo /machine:x64 /def:Windows/Native.def "/out:$out/SwitchBenchNative.lib"
 if ($LASTEXITCODE) { throw 'Could not create native import library.' }
-$sources = @('Core','Container','CompressedContent','Utility','FileOperations','Workflow') | ForEach-Object { "Sources/$_.swift" }
+$sources = @('Core','Container','CompressedContent','CompressionWriter','Utility','FileOperations','Workflow') | ForEach-Object { "Sources/$_.swift" }
 $common = @('-swift-version','5','-whole-module-optimization','-I','Windows') + $sources + @('Windows/Platform.swift', '-L', $out, '-lSwitchBenchNative')
 & swiftc @common -O Windows/Worker.swift -o "$out/SwitchBenchWorker.exe"
 if ($LASTEXITCODE) { throw 'Could not build SwitchBench worker.' }

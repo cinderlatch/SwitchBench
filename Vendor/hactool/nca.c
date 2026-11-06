@@ -1,4 +1,4 @@
-/* SwitchBench local modifications, 2026-11-03 through 2026-11-04. See ../CHANGES.md; upstream authors and licenses retained. */
+/* SwitchBench local modifications, 2026-11-03 through 2026-11-06. See ../CHANGES.md; upstream authors and licenses retained. */
 #include <stdlib.h>
 #include "nca.h"
 #include "aes.h"
@@ -652,6 +652,10 @@ int nca_decrypt_header(nca_ctx_t *ctx) {
                 memcpy(ctx->decrypted_keys, dec_header.encrypted_keys, 0x40);
             } else {
                 ctx->format_version = NCAVERSION_NCA0;
+                if (ctx->crypto_type >= 0x20 || dec_header.kaek_ind >= 3) {
+                    free_aes_ctx(hdr_aes_ctx);
+                    return 0;
+                }
                 aes_ctx_t *aes_ctx = new_aes_ctx(ctx->tool_ctx->settings.keyset.key_area_keys[ctx->crypto_type][dec_header.kaek_ind], 16, AES_MODE_ECB);
                 aes_decrypt(aes_ctx, ctx->decrypted_keys, dec_header.encrypted_keys, 0x20);
                 free_aes_ctx(aes_ctx);

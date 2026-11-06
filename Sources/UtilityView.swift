@@ -150,7 +150,7 @@ struct TaskView:View {
         VStack(spacing:10) {
             Image(systemName:"square.and.arrow.down").font(.system(size:28)).foregroundStyle(BenchStyle.accent).accessibilityHidden(true)
             Text(tool == .join ? "Drop a part or its folder here" : tool == .update ? "Drop games and their updates here" : "Drop game files here").font(.headline)
-            Text(tool == .join ? "Choose any part; the others must be in the same folder." : tool == .trim ? "Uncompressed XCI files" : "NSP, XCI, NSZ and XCZ files").font(.callout).foregroundStyle(BenchStyle.secondary)
+            Text(tool == .join ? "Choose any part; the others must be in the same folder." : tool == .trim ? "Uncompressed XCI files" : tool == .compress ? "Uncompressed NSP and XCI files" : "NSP, XCI, NSZ and XCZ files").font(.callout).foregroundStyle(BenchStyle.secondary)
             HStack { Button(tool == .join ? "Choose Parts…" : "Choose Files…",action:model.chooseFiles);if tool != .join { Button("Choose a Folder…",action:model.chooseFolder) } }
             Text("Your originals stay unchanged.").font(.caption).foregroundStyle(BenchStyle.secondary)
         }.frame(maxWidth:.infinity).padding(.vertical,24).background(BenchStyle.accent.opacity(dropTarget ? 0.12 : 0.035),in:RoundedRectangle(cornerRadius:12))

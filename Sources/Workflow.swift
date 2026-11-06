@@ -4,7 +4,7 @@ import CryptoKit
 #endif
 
 enum UtilityTool: String, CaseIterable, Identifiable, Codable {
-    case update, inspect, combine, convert, split, join, trim
+    case update, inspect, combine, convert, split, join, trim, compress
     var id: String { rawValue }
     static var tasks: [UtilityTool] { allCases }
     static func restoredSelection(_ value: String?) -> UtilityTool { value.flatMap(Self.init(rawValue:)) ?? .inspect }
@@ -17,6 +17,7 @@ enum UtilityTool: String, CaseIterable, Identifiable, Codable {
         case .split: return "Split Large Files"
         case .join: return "Join Split Files"
         case .trim: return "Shrink XCI Files"
+        case .compress: return "Compress Files"
         }
     }
     var symbol: String {
@@ -28,6 +29,7 @@ enum UtilityTool: String, CaseIterable, Identifiable, Codable {
         case .split: return "square.split.2x2"
         case .join: return "square.grid.2x2"
         case .trim: return "scissors"
+        case .compress: return "archivebox"
         }
     }
     var explanation: String {
@@ -39,6 +41,7 @@ enum UtilityTool: String, CaseIterable, Identifiable, Codable {
         case .split: return "Create smaller parts for drives with a 4 GB file limit."
         case .join: return "Put file parts back together. Choose any part or its folder."
         case .trim: return "Remove unused space from XCI files. The game content stays the same."
+        case .compress: return "Save smaller copies of NSP and XCI files."
         }
     }
     var guidance: String {
@@ -50,6 +53,7 @@ enum UtilityTool: String, CaseIterable, Identifiable, Codable {
         case .split: return "Keep all parts and the included parts list together. Use Join Split Files to restore the complete file."
         case .join: return "SwitchBench parts have saved checksums. Older parts are checked for missing numbers and a complete game-file container."
         case .trim: return "Only unused space at the end is removed. This is different from compression and works with uncompressed XCI files."
+        case .compress: return "NSP becomes NSZ, and XCI becomes XCZ. Use Convert to NSP if your emulator needs a standard NSP."
         }
     }
     var button: String { action(count:1) }
@@ -62,13 +66,14 @@ enum UtilityTool: String, CaseIterable, Identifiable, Codable {
         case .split: return count == 1 ? "Split File" : "Split \(count) Files"
         case .join: return "Join Parts"
         case .trim: return count == 1 ? "Shrink XCI" : "Shrink \(count) Files"
+        case .compress: return count == 1 ? "Compress File" : "Compress \(count) Files"
         }
     }
     static func destinations(for url:URL) -> [UtilityTool] {
         if (try? url.resourceValues(forKeys:[.isDirectoryKey]).isDirectory)==true { return [.join] }
         switch url.pathExtension.lowercased() {
-        case "nsp":return [.inspect,.update,.combine,.split]
-        case "xci":return [.inspect,.update,.combine,.convert,.split,.trim]
+        case "nsp":return [.inspect,.update,.combine,.split,.compress]
+        case "xci":return [.inspect,.update,.combine,.convert,.split,.trim,.compress]
         case "nsz","xcz":return [.inspect,.update,.combine,.convert,.split]
         default:return [.join]
         }
@@ -82,10 +87,16 @@ enum UtilityTool: String, CaseIterable, Identifiable, Codable {
         if stage.contains("building compatible") { return "Creating the updated copy" }
         return raw
     }
-    var needsKeys: Bool { [.update,.inspect,.combine].contains(self) }
+    var needsKeys: Bool { [.update,.inspect,.combine,.compress].contains(self) }
     var writesFiles: Bool { self != .inspect }
     var allowsMultiple: Bool { self != .join }
-    var extensions: Set<String> { self == .trim ? ["xci"] : ["nsp","xci","nsz","xcz"] }
+    var extensions: Set<String> {
+        switch self {
+        case .trim: return ["xci"]
+        case .compress: return ["nsp", "xci"]
+        default: return ["nsp", "xci", "nsz", "xcz"]
+        }
+    }
 }
 
 enum IssueKind: String, Codable { case input, keys, extraKeys, destination, collision, space, parts, helper }
@@ -201,6 +212,20 @@ final class PreparationEngine {
                             plan.requiredSpace=restored*2+32*1024*1024
                             plan.sizeEstimate="About "+FileLabels.bytes(restored)+" plus the package’s contents list"
                             plan.preview="Create one NSP copy. Included updates stay separate; they aren’t applied to the game."
+                        }
+                    } else if tool == .compress {
+                        let format = layout.isCartridge ? "XCZ" : "NSZ"
+                        if layout.entries.contains(where: { $0.name.lowercased().hasSuffix(".ncz") }) {
+                            plan.skipReason = "This file is already compressed."
+                        } else {
+                            guard tool.extensions.contains(url.pathExtension.lowercased()), layout.fileSize <= 1 << 40 else {
+                                throw TaskIssue(.input, "Choose an uncompressed NSP or XCI file within the supported size limit.")
+                            }
+                            plan.outputName = url.deletingPathExtension().lastPathComponent + " [Compressed]." + format.lowercased()
+                            plan.requiredSpace = 2 * layout.fileSize + 32 * 1024 * 1024
+                            plan.preview = "Save a smaller \(format) copy and check that the original game data can be restored."
+                            plan.sizeEstimate = "Savings depend on the game."
+                            if patcher == nil { plan.issue = TaskIssue(.keys, "Choose your prod.keys file to compress games.") }
                         }
                     } else if tool == .split {
                         let limit:UInt64=0xFFFF0000
@@ -337,6 +362,7 @@ final class PreparationEngine {
         case .split:result=try engine.split(plan.sources[0].url,folder:workspace)
         case .join:result=try engine.join(plan.sources[0].url,folder:workspace)
         case .trim:result=try engine.trim(plan.sources[0].url,folder:workspace)
+        case .compress:result=try engine.compress(plan.sources[0].url,folder:workspace)
         case .inspect:throw TaskIssue(.input,"Checking content doesn’t create a new file.")
         }
         try engine.control.check()

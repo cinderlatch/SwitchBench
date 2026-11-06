@@ -4,8 +4,13 @@ import CryptoKit
 #endif
 
 struct ContainerLayout {
+    struct Cartridge {
+        let rootOffset: UInt64
+        let partitions: [PFSEntry]
+    }
+    let cartridge: Cartridge?
     let entries: [PFSEntry]
-    let isCartridge: Bool
+    var isCartridge: Bool { cartridge != nil }
     let usedSize: UInt64
     let fileSize: UInt64
     init(_ url: URL) throws {
@@ -49,14 +54,14 @@ struct ContainerLayout {
             return found
         }
         if try read(0, 4) == Data("PFS0".utf8) {
-            entries = try directory(0, size, hashed: false); isCartridge = false; usedSize = entries.map { $0.offset + $0.size }.max() ?? size
+            entries = try directory(0, size, hashed: false); cartridge = nil; usedSize = entries.map { $0.offset + $0.size }.max() ?? size
         } else {
             guard size >= 0x200, try read(0x100, 4) == Data("HEAD".utf8) else { throw PatchError("Choose an NSP, XCI, NSZ or XCZ game file.") }
             let header = try read(0, 0x200), rootOffset = try header.number(0x130, 8)
             guard rootOffset >= 0x200, rootOffset < size else { throw PatchError("The cartridge dump has an invalid contents location.") }
             let partitions = try directory(rootOffset, size - rootOffset, hashed: true)
             guard partitions.count <= 16, let secure = partitions.first(where: { $0.name == "secure" }) else { throw PatchError("This cartridge dump has no game-content partition.") }
-            entries = try directory(secure.offset, secure.size, hashed: true); isCartridge = true
+            entries = try directory(secure.offset, secure.size, hashed: true); cartridge = Cartridge(rootOffset: rootOffset, partitions: partitions)
             let lastSector = try header.number(0x118, 8)
             guard lastSector < UInt64.max / 0x200 else { throw PatchError("The cartridge dump’s length is invalid.") }
             let declared = (lastSector + 1) * 0x200

@@ -262,6 +262,7 @@ struct TaskSession {
                             case .split:row.message="Parts saved and checked. Keep the parts list with them."
                             case .join:row.message="Complete file saved and checked.";if row.plan.preview.contains("No original checksum") { row.notes=["No original checksum was available. Part numbers and the final container were checked."] }
                             case .trim:row.message="Smaller XCI saved and checked."
+                            case .compress:row.message="Smaller copy saved and checked."
                             case .inspect:break
                             }
                         }

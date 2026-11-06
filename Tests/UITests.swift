@@ -9,7 +9,7 @@ import SwiftUI
         defer { defaults.removePersistentDomain(forName:suite) }
         let m=UtilityModel(defaults:defaults,automaticPreparation:false)
         let a=URL(fileURLWithPath:"/tmp/a.xci"),b=URL(fileURLWithPath:"/tmp/b.xci"),one=URL(fileURLWithPath:"/tmp/output-one"),two=URL(fileURLWithPath:"/tmp/output-two")
-        try expect(UtilityTool.tasks.count==7 && Set(UtilityTool.tasks).count==7,"all seven tools have equal sidebar entries")
+        try expect(UtilityTool.tasks.count==8 && Set(UtilityTool.tasks).count==8,"all eight tools have equal sidebar entries")
         try expect(m.activeTool == .inspect,"first launch defaults to Check Files")
         for tool in UtilityTool.tasks {
             try expect(!tool.title.isEmpty && !tool.explanation.isEmpty && !tool.guidance.isEmpty,"\(tool.title) has a purpose and contextual help")

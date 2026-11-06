@@ -51,7 +51,8 @@ internal sealed class BenchWindow : Form
         new Tool("convert", "Convert to NSP", "Create NSP copies from cartridge or compressed game files. Compressed files are expanded.", "Convert to NSP"),
         new Tool("split", "Split Large Files", "Make parts that fit on drives with a 4 GB file limit. Keep the parts list with the files.", "Split Files"),
         new Tool("join", "Join Split Files", "Choose any one part or its folder to restore the complete file.", "Join Parts"),
-        new Tool("trim", "Shrink XCI Files", "Remove unused space at the end of uncompressed XCI files.", "Shrink XCI Files")
+        new Tool("trim", "Shrink XCI Files", "Remove unused space at the end of uncompressed XCI files.", "Shrink XCI Files"),
+        new Tool("compress", "Compress Files", "Save smaller NSZ copies of NSP files and XCZ copies of XCI files. Savings depend on the game.", "Compress Files", true)
     };
 
     private readonly ListBox navigation = new ListBox();
@@ -316,7 +317,7 @@ internal sealed class BenchWindow : Form
     private void PickFiles()
     {
         using (var dialog = new OpenFileDialog { Multiselect = Active.Id != "join", CheckFileExists = true,
-            Filter = Active.Id == "join" ? "All files|*.*" : "Game files|*.nsp;*.xci;*.nsz;*.xcz|All files|*.*" })
+            Filter = Active.Id == "join" ? "All files|*.*" : Active.Id == "compress" ? "NSP and XCI files|*.nsp;*.xci" : "Game files|*.nsp;*.xci;*.nsz;*.xcz|All files|*.*" })
             if (dialog.ShowDialog(this) == DialogResult.OK) AddPaths(dialog.FileNames);
     }
 
@@ -503,7 +504,7 @@ internal sealed class BenchWindow : Form
 
     internal void CheckNavigation()
     {
-        if (navigation.Items.Count != 7) throw new InvalidOperationException("Seven tools expected.");
+        if (navigation.Items.Count != Tools.Length) throw new InvalidOperationException("The navigation is missing tools.");
         for (int i = 0; i < navigation.Items.Count; i++)
         {
             navigation.SelectedIndex = i;

@@ -33,6 +33,69 @@ import Foundation
         try expect(badCombo.issue?.kind == .input,"combination preview rejects duplicate original games")
         let lone=try prep.prepare(.update,inputs:[game],folder:root)[0]
         try expect(lone.issue?.message.contains("matching update")==true,"update preview explains a missing update")
+        let keylessCompression = try simple.prepare(.compress, inputs: [game], folder: root)[0]
+        try expect(keylessCompression.issue?.kind == .keys, "compression preview asks for a local key file")
+        let cartridge = fixtures.appendingPathComponent("Compressible Cartridge.xci")
+        let compression = try prep.prepare(.compress, inputs: [game, cartridge, addon], folder: root)
+        try expect(compression.map { $0.outputName?.suffix(4) } == [".nsz", ".xcz", ".nsz"], "batch compression previews the format for each source")
+        for (input, plan) in zip([game, cartridge, addon], compression) {
+            let before = try UtilityEngine.hash(input, control: patcher.control)
+            let output = try prep.execute(.compress, plan: plan, folder: root)
+            let packed = try PFSArchive(output)
+            try expect(packed.entries.contains { $0.name.hasSuffix(".ncz") } &&
+                       (try FileStamp(output).size) < (try FileStamp(input).size), "compression publishes a smaller package with compressed game data")
+            try expect(try UtilityEngine.hash(input, control: patcher.control) == before, "compression leaves the original unchanged")
+            let restored = try simple.execute(.convert, plan: simple.prepare(.convert, inputs: [output], folder: root)[0], folder: root)
+            let archive = try PFSArchive(input), copy = try PFSArchive(restored)
+            try expect(archive.entries.map(\.name) == copy.entries.map(\.name), "conversion restores the original member names and order")
+            for (original, member) in zip(archive.entries, copy.entries) {
+                let data = try archive.read(original, limit: Int(original.size))
+                try expect(original.size == member.size && (try copy.read(member, limit: Int(member.size))) == data,
+                           "compression round trip preserves every member byte")
+            }
+            let info = try e.inspect(output)
+            try expect(try e.verify(info).checked > 0, "the compressed copy passes the original game metadata checks")
+            if input == cartridge {
+                let report = try patcher.run(["-i", "-t", "xci", "--disablekeywarns", output.path], working: root, allowUnsigned: true)
+                try expect(report.contains("update") && report.contains(".ncz"), "hactool independently reads the compressed cartridge partitions")
+                let sourcePartitions = try ContainerLayout(input).cartridge!.partitions
+                let copyPartitions = try ContainerLayout(output).cartridge!.partitions
+                let sourceUpdate = sourcePartitions.first { $0.name == "update" }!
+                let savedUpdate = copyPartitions.first { $0.name == "update" }!
+                let source = try Data(contentsOf: input), saved = try Data(contentsOf: output)
+                try expect(source.subdata(in: Int(sourceUpdate.offset)..<Int(sourceUpdate.offset + sourceUpdate.size)) ==
+                           saved.subdata(in: Int(savedUpdate.offset)..<Int(savedUpdate.offset + savedUpdate.size)),
+                           "compression preserves the entire non-game cartridge partition")
+            }
+            if input == addon {
+                let member = packed.entries.first { $0.name.hasSuffix(".ncz") }!
+                try expect(try CompressedContent(archive: output, entry: member).sections.contains { $0.type == 3 },
+                           "encrypted game content is written using AES-CTR section records")
+            }
+        }
+        let noSavings = try prep.prepare(.compress, inputs: [xci], folder: root)[0]
+        do {
+            _ = try prep.execute(.compress, plan: noSavings, folder: root)
+            throw PatchError("Unexpected compression of unsupported content")
+        } catch let error as PatchError {
+            try expect(error.message.contains("become smaller") &&
+                       !fm.fileExists(atPath: root.appendingPathComponent(noSavings.outputName!).path),
+                       "unsupported content leaves no compressed output")
+        }
+        let cancelledCompression = WorkControl()
+        let cancelPatcher = PatchEngine(executable: helper, keys: keys, control: cancelledCompression) { _, _ in }
+        let cancelEngine = UtilityEngine(patcher: cancelPatcher, control: cancelledCompression) { stage, _ in
+            if stage == "Compressing and checking game data" { cancelledCompression.cancel() }
+        }
+        let cancelFolder = root.appendingPathComponent("Cancelled")
+        try fm.createDirectory(at: cancelFolder, withIntermediateDirectories: false)
+        do {
+            _ = try cancelEngine.compress(game, folder: cancelFolder)
+            throw PatchError("Unexpected compression after cancellation")
+        } catch let error as PatchError {
+            try expect(error.message.contains("Cancelled") && (try fm.contentsOfDirectory(atPath: cancelFolder.path)).isEmpty,
+                       "cancelling during compression cleans up all staged files")
+        }
         let parts=fixtures.appendingPathComponent("Sample Parts")
         let join=try simple.prepare(.join,inputs:[parts],folder:root)[0]
         try expect(join.preview.contains("parts") && join.preview.contains("checksums") && join.requiredSpace>0,"join preview discovers part count and checksum availability without hashing all content")

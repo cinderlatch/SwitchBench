@@ -29,6 +29,7 @@ import Foundation
                     case "convert":result=try utility.convert(input,folder:output)
                     case "split":result=try utility.split(input,folder:output)
                     case "join":result=try utility.join(input,folder:output)
+                    case "compress":result=try utility.compress(input,folder:output)
                     case "trim":result=try utility.trim(input,folder:output)
                     default:throw PatchError("Unknown operation.")
                     }

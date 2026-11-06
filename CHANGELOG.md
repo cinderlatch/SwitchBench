@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
+
+- Added Compress Files for NSP to NSZ and XCI to XCZ on macOS and Windows, with lossless game-content verification.
 
 - Clarified upstream acknowledgements and named SAK and Switch Game Merge Utility as the primary inspirations, with the maintainer’s Mac/Codex origin story.
 - Moved hosted regression testing to Intel macOS and added explicit arm64 cross-compilation/architecture verification after repeated hosted Apple Silicon capacity failures.

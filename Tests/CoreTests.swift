@@ -198,7 +198,7 @@ import Darwin
         var romfs = Data()
         for value: UInt64 in [0x50,0x50,0xC,0x5C,0x18,0x74,0xC,0x80,0,0x200] { romfs.appendLE(value, bytes: 8) }
         for value: UInt64 in [0,0xFFFFFFFF,0xFFFFFFFF,0,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF] { romfs.appendLE(value, bytes: 4) }
-        romfs.append(Data(repeating: 0, count: 0x200-romfs.count))
+        romfs.append(Data(repeating: 0, count: (2 * 1024 * 1024 + 0x200)-romfs.count))
         try romfs.write(to: rebuiltPayload.appendingPathComponent("game.romfs"))
         var controlData = Data(repeating: 0, count: 0x4000)
         controlData.replaceSubrange(0..<7, with: Data("Fixture".utf8)); controlData.replaceSubrange(0x200..<0x204, with: Data("Test".utf8))
@@ -253,7 +253,7 @@ import Darwin
         // Build real add-on content through hacPack, then retain both contents tables in a combined NSP.
         let addonRoot = root.appendingPathComponent("addon"); try fm.createDirectory(at: addonRoot, withIntermediateDirectories: false)
         let addonID: UInt64 = 0x0100000000002001
-        let addonArgs = ["-k", buildKeys.path, "--type", "nca", "--titleid", String(format: "%016llx", addonID), "--plaintext", "--outdir", addonRoot.path, "--tempdir", addonRoot.appendingPathComponent("temp").path, "--backupdir", addonRoot.appendingPathComponent("backup").path]
+        let addonArgs = ["-k", buildKeys.path, "--type", "nca", "--titleid", String(format: "%016llx", addonID), "--outdir", addonRoot.path, "--tempdir", addonRoot.appendingPathComponent("temp").path, "--backupdir", addonRoot.appendingPathComponent("backup").path]
         _ = try realBuilder.run(addonArgs + ["--ncatype", "publicdata", "--romfsdir", rebuiltRoot.appendingPathComponent("payload/game.romfs").path], working: root, tool: realBuilder.packer)
         let publicData = try fm.contentsOfDirectory(at: addonRoot, includingPropertiesForKeys: nil).first { $0.pathExtension == "nca" }!
         _ = try realBuilder.run(addonArgs + ["--ncatype", "meta", "--titletype", "addon", "--publicdatanca", publicData.path], working: root, tool: realBuilder.packer)

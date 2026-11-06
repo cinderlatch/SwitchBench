@@ -2,11 +2,13 @@
 
 The Windows preview runs on Windows 11 with an x64 Intel or AMD processor. Extract the whole download, open the SwitchBench folder and double-click **SwitchBench.exe**. Keep the Engine folder beside it. The portable download includes the processing helpers and Swift runtime.
 
-Choose one of the seven tools on the left. Add files, add a folder or drag files into the window. Use **Preview** to see the planned result, then start. Select a result to read its details or open the saved location. **Stop** lets the current task clean up. SwitchBench reads originals and saves checked copies.
+Choose a tool on the left. Add files, add a folder or drag files into the window. Use **Preview** to see the planned result, then start. Select a result to read its details or open the saved location. **Stop** lets the current task clean up. SwitchBench reads originals and saves checked copies.
 
-Update Games, Check Files and Combine Files use the prod.keys file you already use with your emulator. Choose it in the app. The additional key button appears when a task needs title.keys. Key processing stays on your computer.
+Update Games, Check Files, Combine Files and Compress Files use the prod.keys file you already use with your emulator. Choose it in the app. The additional key button appears when a task needs title.keys. Key processing stays on your computer.
 
 The app remembers save folders and the production key file's location in your local Windows profile. It keeps the additional key file's location for the current session.
+
+**Compress Files** creates NSZ from NSP or XCZ from XCI. Savings vary by game. Use **Convert to NSP** when you need to expand the compressed game content.
 
 ## Build from source
 

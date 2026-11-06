@@ -18,7 +18,7 @@ staging=$(mktemp -d /private/tmp/switchpatch-build.XXXXXX)
 trap 'rm -rf "$staging"' EXIT
 app="$staging/SwitchBench.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers" "$app/Contents/Resources"
-swiftc -swift-version 5 -O -target arm64-apple-macosx13.0 -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Sources/WorkflowModel.swift Sources/UtilityView.swift Sources/App.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o "$app/Contents/MacOS/SwitchBench" -framework SwiftUI -framework AppKit
+swiftc -swift-version 5 -O -target arm64-apple-macosx13.0 -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/CompressionWriter.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Sources/WorkflowModel.swift Sources/UtilityView.swift Sources/App.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o "$app/Contents/MacOS/SwitchBench" -framework SwiftUI -framework AppKit
 for binary in Vendor/hactool/hactool Vendor/hacPack/hacpack "$app/Contents/MacOS/SwitchBench"; do
     lipo "$binary" -verify_arch arm64
 done
@@ -44,8 +44,8 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 <key>CFBundleDisplayName</key><string>SwitchBench</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.6.0</string>
-<key>CFBundleVersion</key><string>14</string>
+<key>CFBundleShortVersionString</key><string>0.8.0</string>
+<key>CFBundleVersion</key><string>15</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>

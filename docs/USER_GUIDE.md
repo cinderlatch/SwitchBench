@@ -6,7 +6,7 @@ Use **Update Games** to apply an update into a game copy. Add both the original 
 
 **Check Files** shows recognized game information first. Choose Check Contents to scan stored game data. Information being readable is different from the contents passing a scan. A passed scan is different from confirmed emulator gameplay.
 
-**Convert to NSP** expands compressed NSZ/XCZ content or copies cartridge content into NSP. It does not reduce file size. **Shrink XCI Files** removes unused trailing cartridge space. **Split Large Files** prepares parts for file-size-limited drives; keep the generated parts list with all parts. **Join Split Files** accepts any part or its folder.
+**Convert to NSP** expands compressed NSZ/XCZ content or copies cartridge content into NSP. **Compress Files** saves smaller NSZ copies of NSP files and XCZ copies of XCI files. It uses your local key file and checks that the compressed game data can be restored. Savings vary by game. Use **Convert to NSP** if your emulator needs an uncompressed copy. Keep the original XCI if you need an exact cartridge dump. **Shrink XCI Files** removes unused trailing cartridge space. **Split Large Files** prepares parts for file-size-limited drives; keep the generated parts list with all parts. **Join Split Files** accepts any part or its folder.
 
 ## Work with files
 

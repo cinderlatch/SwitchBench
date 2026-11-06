@@ -37,6 +37,11 @@ The app rebuilds normal program/control/meta NCAs and verifies their hashes with
 - Files differing from those original archives: hactool/main.c, nca.c, nca.h; hacPack/Makefile, ivfc.h, nacp.c, romfs.c. Local config.mk files select the Mac compiler/link settings. Upstream dependency sources and notices are preserved.
 - No exact upstream commit was recorded for the original moving master archives. The checksummed baseline archives and complete vendored release source are the provenance record; no revision is invented.
 
+## Compression output
+
+- hactool/main.c adds a private header probe for NCZ section records. It writes records to a temporary file and prints only status and content size. hactool/nca.c bounds legacy header key-area indices.
+- SwitchBench writes independently decodable Zstandard blocks and verifies their restored data. The [NSZ format specification](https://github.com/nicoboss/nsz/blob/master/docs/formats.md) guided the implementation.
+
 ## Windows preview
 
 The Windows build uses hacPack’s existing Windows filesystem support and sets its executable suffix explicitly in the Makefile. The build embeds a UTF-8 code page manifest in both processing helpers so Windows filenames can be passed through their existing command-line interfaces.

@@ -8,7 +8,7 @@ if [ -z "${QA_FIXTURES:-}" ]; then
     export QA_FIXTURES="$qa_fixtures"
 fi
 bash Tools/BuildNative.sh
-swiftc -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Tests/CoreTests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/CoreTests
+swiftc -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/CompressionWriter.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Tests/CoreTests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/CoreTests
 engine_path="${1:-$PWD/Vendor/hactool/hactool}"
 packer_path="${2:-$PWD/Vendor/hacPack/hacpack}"
 ./build/CoreTests "$engine_path" "$packer_path"
@@ -33,13 +33,13 @@ cc -O2 -Wall -Wextra -I Vendor/hacPack/mbedtls/include Tests/NACPTests.c "${pack
     -L Vendor/hacPack/mbedtls/library -lmbedtls -lmbedx509 -lmbedcrypto -lz -o build/NACPTests
 ./build/NACPTests
 
-swiftc -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Tests/UtilityTests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/UtilityTests
+swiftc -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/CompressionWriter.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Tests/UtilityTests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/UtilityTests
 ./build/UtilityTests "$engine_path"
 
-swiftc -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Tests/WorkflowTests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/WorkflowTests
+swiftc -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/CompressionWriter.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Tests/WorkflowTests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/WorkflowTests
 ./build/WorkflowTests "$engine_path" "$QA_FIXTURES" "$packer_path"
 
-swiftc -D QA_TESTING -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Sources/WorkflowModel.swift Sources/UtilityView.swift Sources/App.swift Tests/UITests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -framework SwiftUI -framework AppKit -o build/UIStateTests
+swiftc -D QA_TESTING -swift-version 5 -O -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/CompressionWriter.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Sources/WorkflowModel.swift Sources/UtilityView.swift Sources/App.swift Tests/UITests.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -framework SwiftUI -framework AppKit -o build/UIStateTests
 ./build/UIStateTests
 
 # Check the shared primary/supporting text palette in four native appearances.

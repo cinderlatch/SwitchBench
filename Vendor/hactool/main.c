@@ -1,4 +1,4 @@
-/* SwitchBench local modifications, 2026-11-03 through 2026-11-04. See ../CHANGES.md; upstream authors and licenses retained. */
+/* SwitchBench local modifications, 2026-11-03 through 2026-11-06. See ../CHANGES.md; upstream authors and licenses retained. */
 #include <getopt.h>
 #include <errno.h>
 #include <stdio.h>
@@ -114,30 +114,138 @@ static void usage(void) {
     exit(EXIT_FAILURE);
 }
 
-/* SwitchPatch extension: bounded header inspection without reading NCA sections. */
-static int switchpatch_header(const char *key_path, const char *header_path) {
-    hactool_ctx_t tool; nca_ctx_t nca;
-    memset(&tool, 0, sizeof(tool)); nca_init(&nca);
-    nca.tool_ctx = &tool; tool.settings.skip_key_warnings = 1;
-    tool.settings.suppress_keydata_output = 1;
-    pki_initialize_keyset(&tool.settings.keyset, KEYSET_RETAIL);
+/* SwitchBench extension: bounded header inspection without reading NCA sections. */
+static int switchbench_read_nca_header(hactool_ctx_t *tool, nca_ctx_t *nca,
+                                      const char *key_path, const char *header_path) {
+    memset(tool, 0, sizeof(*tool));
+    nca_init(nca);
+    nca->tool_ctx = tool;
+    tool->settings.skip_key_warnings = 1;
+    tool->settings.suppress_keydata_output = 1;
+    pki_initialize_keyset(&tool->settings.keyset, KEYSET_RETAIL);
     FILE *keys = fopen(key_path, "rb");
-    if (!keys) return 1;
-    extkeys_initialize_settings(&tool.settings, keys); fclose(keys);
-    pki_derive_keys(&tool.settings.keyset);
-    nca.file = fopen(header_path, "rb");
-    if (!nca.file) return 1;
-    int ok = nca_decrypt_header(&nca); fclose(nca.file);
-    if (!ok) return 1;
+    if (!keys) return 0;
+    extkeys_initialize_settings(&tool->settings, keys);
+    fclose(keys);
+    pki_derive_keys(&tool->settings.keyset);
+    nca->file = tool->file = fopen(header_path, "rb");
+    if (!nca->file) return 0;
+    int ok = nca_decrypt_header(nca);
+    fclose(nca->file);
+    return ok;
+}
+
+static int switchpatch_header(const char *key_path, const char *header_path) {
+    hactool_ctx_t tool;
+    nca_ctx_t nca;
+    if (!switchbench_read_nca_header(&tool, &nca, key_path, header_path)) return 1;
     printf("SWITCHPATCH %u %016"PRIx64" %"PRIu64" ", nca.header.content_type, nca.header.title_id, nca.header.nca_size);
     for (int i = 0; i < 16; ++i) printf("%02x", nca.header.rights_id[i]);
     printf("\n");
     return 0;
 }
 
+static void switchbench_le64(uint8_t *dest, uint64_t value) {
+    for (int i = 0; i < 8; ++i) dest[i] = (uint8_t)(value >> (8 * i));
+}
+
+/* Emit NCZ section records into a private file. Stdout contains status only. */
+static int switchbench_ncz(const char *key_path, const char *title_path,
+                           const char *header_path, const char *section_path) {
+    hactool_ctx_t tool;
+    nca_ctx_t nca;
+    if (!switchbench_read_nca_header(&tool, &nca, key_path, header_path)) {
+        puts("NCZ HEADER");
+        return 0;
+    }
+    if ((nca.header.content_type != 0 && nca.header.content_type != 5) ||
+        (nca.format_version != NCAVERSION_NCA3 && nca.format_version != NCAVERSION_NCA2)) {
+        puts("NCZ SKIP");
+        return 0;
+    }
+    int count = 0, needs_ctr = 0;
+    uint8_t records[4][64] = {{0}};
+    for (int i = 0; i < 4; ++i) {
+        const nca_section_entry_t *section = &nca.header.section_entries[i];
+        if (!section->media_start_offset) continue;
+        int type = nca.is_decrypted ? CRYPT_NONE : nca.header.fs_headers[i].crypt_type;
+        if (type != CRYPT_NONE && type != CRYPT_CTR) {
+            puts("NCZ SKIP");
+            return 0;
+        }
+        if (section->media_end_offset <= section->media_start_offset) {
+            puts("NCZ LAYOUT");
+            return 0;
+        }
+        uint8_t *record = records[count++];
+        switchbench_le64(record, (uint64_t)section->media_start_offset * 0x200);
+        switchbench_le64(record + 8, (uint64_t)(section->media_end_offset - section->media_start_offset) * 0x200);
+        switchbench_le64(record + 16, type);
+        if (type == CRYPT_CTR) {
+            needs_ctr = 1;
+            for (int j = 0; j < 8; ++j) record[48 + j] = nca.header.fs_headers[i].section_ctr[7 - j];
+        }
+    }
+    if (!count) {
+        puts("NCZ SKIP");
+        return 0;
+    }
+    if (needs_ctr) {
+        uint8_t zero[16] = {0}, key[16];
+        int generation = nca.header.crypto_type > nca.header.crypto_type2 ? nca.header.crypto_type : nca.header.crypto_type2;
+        if (generation > 0) --generation;
+        if (generation >= 0x20) {
+            puts("NCZ KEYS");
+            return 0;
+        }
+        nca.crypto_type = generation;
+        if (!memcmp(nca.header.rights_id, zero, sizeof(zero))) {
+            if (nca.header.kaek_ind >= 3 ||
+                !memcmp(tool.settings.keyset.key_area_keys[generation][nca.header.kaek_ind], zero, sizeof(zero))) {
+                puts("NCZ KEYS");
+                return 0;
+            }
+            nca_decrypt_key_area(&nca);
+            memcpy(key, nca.decrypted_keys[2], sizeof(key));
+        } else {
+            FILE *titles = fopen(title_path, "rb");
+            if (!titles) return 1;
+            extkeys_parse_titlekeys(&tool.settings, titles);
+            fclose(titles);
+            titlekey_entry_t *entry = settings_get_titlekey(&tool.settings, nca.header.rights_id);
+            const uint8_t *titlekek = tool.settings.keyset.titlekeks[generation];
+            if (!entry) {
+                free(tool.settings.known_titlekeys.titlekeys);
+                puts("NCZ TITLE");
+                return 0;
+            }
+            if (!memcmp(titlekek, zero, sizeof(zero))) {
+                free(tool.settings.known_titlekeys.titlekeys);
+                puts("NCZ KEYS");
+                return 0;
+            }
+            aes_ctx_t *aes = new_aes_ctx(titlekek, sizeof(key), AES_MODE_ECB);
+            aes_decrypt(aes, key, entry->titlekey, sizeof(key));
+            free_aes_ctx(aes);
+            free(tool.settings.known_titlekeys.titlekeys);
+        }
+        for (int i = 0; i < count; ++i) {
+            if (records[i][16] == CRYPT_CTR) memcpy(records[i] + 32, key, sizeof(key));
+        }
+    }
+    FILE *out = fopen(section_path, "wb");
+    if (!out) return 1;
+    int written = fwrite(records, sizeof(records[0]), count, out) == (size_t)count;
+    if (fclose(out) || !written) return 1;
+    printf("NCZ OK %"PRIu64"\n", nca.header.nca_size);
+    return 0;
+}
+
 int main(int argc, char **argv) {
     if (argc == 4 && strcmp(argv[1], "--switchpatch-header") == 0)
         return switchpatch_header(argv[2], argv[3]);
+    if (argc == 6 && strcmp(argv[1], "--switchbench-ncz") == 0)
+        return switchbench_ncz(argv[2], argv[3], argv[4], argv[5]);
     const char *switchpatch_titlekeys = NULL;
     hactool_ctx_t tool_ctx;
     hactool_ctx_t base_ctx; /* Context for base NCA, if used. */

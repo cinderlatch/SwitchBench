@@ -2,13 +2,13 @@
 
 # SwitchBench
 
-A desktop workbench for Switch game files. Update, check, combine, convert, split, join, and shrink files in one app.
+A desktop workbench for Switch game files. Update, check, combine, convert, compress, split, join, and shrink files in one app.
 
 **macOS 13+ on Apple Silicon · Windows 11 x64 preview · Free and open source**
 
 [![Build and test](https://github.com/cinderlatch/SwitchBench/actions/workflows/ci.yml/badge.svg)](https://github.com/cinderlatch/SwitchBench/actions/workflows/ci.yml)
 
-[Download for macOS](https://github.com/cinderlatch/SwitchBench/releases/latest) · [Windows preview](https://github.com/cinderlatch/SwitchBench/releases/tag/v0.7.0-windows.1) · [Windows guide](docs/WINDOWS.md) · [Mac user guide](docs/USER_GUIDE.md) · [Report a problem](https://github.com/cinderlatch/SwitchBench/issues/new/choose)
+[Download for macOS](https://github.com/cinderlatch/SwitchBench/releases/latest) · [Windows preview](https://github.com/cinderlatch/SwitchBench/releases) · [Windows guide](docs/WINDOWS.md) · [Mac user guide](docs/USER_GUIDE.md) · [Report a problem](https://github.com/cinderlatch/SwitchBench/issues/new/choose)
 
 ## Why SwitchBench exists
 
@@ -20,11 +20,11 @@ I am grateful for the work those projects made available and the ideas they demo
 
 ## Get started on Windows
 
-Download the Windows preview ZIP, extract it, and open **SwitchBench.exe**. The native Windows interface offers the seven tools with the same processing engine as the Mac app. See the [Windows guide](docs/WINDOWS.md) for setup and build instructions.
+Download the Windows preview ZIP, extract it, and open **SwitchBench.exe**. The native Windows interface shares its processing engine with the Mac app. See the [Windows guide](docs/WINDOWS.md) for setup and build instructions.
 
 ## Get started on macOS
 
-1. Download `SwitchBench-v0.6.0-macOS-AppleSilicon.zip` from Releases and unzip it.
+1. Download the macOS Apple Silicon ZIP from Releases and unzip it.
 2. Move **SwitchBench.app** to Applications and open it.
 3. Choose a tool, add your files, and review the preview. For tools that need keys, select your own emulator's `prod.keys` file.
 4. Choose a save folder and start. Your originals stay unchanged; existing outputs are never silently replaced.
@@ -33,7 +33,7 @@ The download is locally signed, **not Apple-notarized**. macOS may block its fir
 
 No games, firmware, production keys, or title keys are included. Use only files and keys you are authorized to use. This project does not provide download sources for them.
 
-## Seven tools, one workflow
+## Tools
 
 | Tool | What it does |
 | --- | --- |
@@ -41,6 +41,7 @@ No games, firmware, production keys, or title keys are included. Use only files 
 | **Check Files** | Shows game names, versions and included content, then checks for missing or changed data. Works with batches and folders. |
 | **Combine Files** | Keeps one game, its matching update and add-ons together in one NSP. The update remains separate inside the package. |
 | **Convert to NSP** | Creates NSP copies from XCI, NSZ and XCZ files. Compressed files are expanded. |
+| **Compress Files** | Saves smaller NSZ copies of NSP files and XCZ copies of XCI files, then verifies that compressed content can be restored. |
 | **Split Large Files** | Creates smaller parts for drives with a file-size limit, with a parts list and checksums. |
 | **Join Split Files** | Puts supported file parts back together and checks the result. |
 | **Shrink XCI Files** | Removes unused trailing space from uncompressed XCI files. |
@@ -52,11 +53,11 @@ Every tool provides preparation, clear results and recovery beside the affected 
 ## macOS requirements and shared limits
 
 - Apple Silicon Mac, macOS 13+. An emulator is not required to process files.
-- Your own compatible `prod.keys` for Update, Check and Combine. Additional title keys are requested only when needed. Keys remain local.
+- Your own compatible `prod.keys` for Update, Check, Combine and Compress. Additional title keys are requested only when needed. Keys remain local.
 - Enough free space for the output and temporary work. Preparation shows available space and known estimates.
 - Update currently supports matching single-program game/update pairs; it does not apply DLC or multi-program patches.
 - A successful data check **does not prove emulator compatibility or gameplay**, and does not authenticate Nintendo signatures. Rebuilt updates cannot retain original Nintendo signatures.
-- Supported inputs include NSP, XCI, NSZ and XCZ, with format-specific limits. There is no compression-output or NSP-to-XCI tool.
+- Supported inputs include NSP, XCI, NSZ and XCZ, with format-specific limits. Compress Files keeps unsupported content intact. Savings vary, and some files cannot be made smaller. Use Convert to NSP if your emulator requires an uncompressed copy.
 - Older split sets without source checksums can be checked for structure/missing parts, but cannot be compared against an authoritative original checksum.
 
 See [the user guide](docs/USER_GUIDE.md), [troubleshooting](docs/TROUBLESHOOTING.md), [privacy](PRIVACY.md), and [validation and limitations](QA-UAT.md).
@@ -83,7 +84,7 @@ The native app relies on the following upstream work:
 - **SciresM and the hactool project** — archive inspection, extraction, patch materialization and verification (ISC).
 - **The-4n, DarkMatterCore and the hacPack project** — archive rebuilding (GPL-2.0, with retained upstream notices).
 - **The Mbed TLS project** — cryptography bundled by the helpers (Apache-2.0).
-- **Meta/Facebook and the Zstandard project** — native compression decoding (BSD license).
+- **Meta/Facebook and the Zstandard project** — native compression and decompression (BSD license).
 - **nicoboss and the NSZ project** — public format documentation used as a reference.
 
 See [CREDITS.md](CREDITS.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), and [Vendor/CHANGES.md](Vendor/CHANGES.md) for links, retained licenses and local modifications. Upstream names do not imply endorsement.

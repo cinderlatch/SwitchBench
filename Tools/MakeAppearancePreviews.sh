@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build/module-cache
-swiftc -D QA_PREVIEW -swift-version 5 -O -target arm64-apple-macosx13.0 -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Sources/WorkflowModel.swift Sources/UtilityView.swift Sources/App.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/AppearancePreview -framework SwiftUI -framework AppKit
+swiftc -D QA_PREVIEW -swift-version 5 -O -target arm64-apple-macosx13.0 -module-cache-path "$PWD/build/module-cache" Sources/Core.swift Sources/Container.swift Sources/CompressedContent.swift Sources/CompressionWriter.swift Sources/Utility.swift Sources/FileOperations.swift Sources/Workflow.swift Sources/WorkflowModel.swift Sources/UtilityView.swift Sources/App.swift build/NativeCompression.o Vendor/zstd-1.5.7/lib/libzstd.a -lz -o build/AppearancePreview -framework SwiftUI -framework AppKit
 python3 - <<'PY'
 from pathlib import Path
 import plistlib,subprocess,shutil

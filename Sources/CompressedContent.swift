@@ -188,3 +188,130 @@ struct CompressedContent {
         return finalHash
     }
 }
+
+extension CompressedContent {
+    /// Keep bytes outside the filesystem sections as-is, including any sector padding.
+    static func sections(from records: Data, size: UInt64) throws -> [Section] {
+        guard !records.isEmpty, records.count <= 256, records.count % 64 == 0 else {
+            throw PatchError("The game content has an invalid section table.")
+        }
+        var declared: [Section] = []
+        for pos in stride(from: 0, to: records.count, by: 64) {
+            let offset = try records.number(pos, 8)
+            let size = try records.number(pos + 8, 8)
+            let type = try records.number(pos + 16, 8)
+            let key = records.subdata(in: (pos+32)..<(pos+48))
+            let counter = records.subdata(in: (pos+48)..<(pos+64))
+            declared.append(Section(offset: offset, size: size, type: type, key: key, counter: counter))
+        }
+        declared.sort { $0.offset < $1.offset }
+        let zero = Data(count: 16)
+        var found: [Section] = [], next: UInt64 = 0x4000, previousEnd: UInt64 = 0
+        for section in declared {
+            guard section.offset >= previousEnd, section.offset <= size, section.size > 0,
+                  section.size <= size - section.offset, [UInt64(1), 3].contains(section.type) else {
+                throw PatchError("The game content has invalid or overlapping sections.")
+            }
+            previousEnd = section.offset + section.size
+            guard previousEnd > next else { continue }
+            let start = max(next, section.offset)
+            if start > next {
+                found.append(Section(offset: next, size: start-next, type: 1, key: zero, counter: zero))
+            }
+            found.append(Section(offset: start, size: previousEnd-start, type: section.type,
+                                 key: section.key, counter: section.counter))
+            next = previousEnd
+        }
+        if next < size { found.append(Section(offset: next, size: size-next, type: 1, key: zero, counter: zero)) }
+        return found
+    }
+
+    /// Write bounded Zstandard blocks and verify the restored ciphertext before keeping the result.
+    static func encode(archive: URL, entry: PFSEntry, sections: [Section], to target: URL,
+                       control: WorkControl, progress: (Double) -> Void) throws -> UInt64? {
+        let input = try FileHandle(forReadingFrom: archive)
+        defer { try? input.close() }
+        let fm = FileManager.default
+        guard fm.createFile(atPath: target.path, contents: nil, attributes: [.posixPermissions: 0o600]) else {
+            throw PatchError("Couldn’t create a temporary compressed file.")
+        }
+        var keep = false
+        defer { if !keep { try? fm.removeItem(at: target) } }
+        let output = try FileHandle(forWritingTo: target)
+        defer { try? output.close() }
+        func read(_ count: Int) throws -> Data {
+            let bytes = try input.read(upToCount: count) ?? Data()
+            guard bytes.count == count else { throw PatchError("A game file changed during compression.") }
+            return bytes
+        }
+        try input.seek(toOffset: entry.offset)
+        let header = try read(0x4000)
+        var hash = SHA256()
+        hash.update(data: header)
+        try output.write(contentsOf: header)
+
+        let exponent: UInt8 = 20
+        let blockSize = 1 << exponent, body = entry.size - 0x4000
+        let blockCount = Int(1 + (body-1)/UInt64(blockSize))
+        var table = Data("NCZSECTN".utf8)
+        table.appendLE(UInt64(sections.count), bytes: 8)
+        for section in sections {
+            table.appendLE(section.offset, bytes: 8)
+            table.appendLE(section.size, bytes: 8)
+            table.appendLE(section.type, bytes: 8)
+            table.appendLE(0, bytes: 8)
+            table.append(section.key)
+            table.append(section.counter)
+        }
+        table.append(contentsOf: "NCZBLOCK".utf8)
+        table.append(contentsOf: [2, 1, 0, exponent])
+        table.appendLE(UInt64(blockCount), bytes: 4)
+        table.appendLE(body, bytes: 8)
+        try output.write(contentsOf: table)
+        let blockTableOffset = try output.offset()
+        try output.write(contentsOf: Data(count: blockCount * 4))
+
+        var blockTable = Data(), packed = Data(count: blockSize + 8192), cursor: UInt64 = 0x4000
+        var sectionIndex = 0, storedSize = blockTableOffset + UInt64(blockCount * 4)
+        while cursor < entry.size {
+            try autoreleasepool {
+                try control.check()
+                let count = Int(min(UInt64(blockSize), entry.size-cursor))
+                let raw = try read(count)
+                hash.update(data: raw)
+                var plaintext = Data()
+                plaintext.reserveCapacity(count)
+                var pos = 0
+                while pos < count {
+                    let offset = cursor + UInt64(pos)
+                    let section = sections[sectionIndex]
+                    let end = section.offset + section.size
+                    let length = min(count-pos, Int(end-offset))
+                    plaintext.append(try crypt(raw.subdata(in: pos..<(pos+length)), section: section, offset: offset))
+                    pos += length
+                    if offset + UInt64(length) == end { sectionIndex += 1 }
+                }
+                let compressed = packed.withUnsafeMutableBytes { dst in
+                    plaintext.withUnsafeBytes { src in
+                        zstdEncode(src.baseAddress, src.count, dst.baseAddress, dst.count, 6)
+                    }
+                }
+                let bytes = compressed > 0 && compressed < count ? Data(packed.prefix(compressed)) : plaintext
+                try output.write(contentsOf: bytes)
+                blockTable.appendLE(UInt64(bytes.count), bytes: 4)
+                storedSize += UInt64(bytes.count)
+                cursor += UInt64(count)
+                progress(0.55 * Double(cursor) / Double(entry.size))
+            }
+        }
+        guard storedSize < entry.size else { return nil }
+        try output.seek(toOffset: blockTableOffset)
+        try output.write(contentsOf: blockTable)
+        try output.close()
+        let member = PFSEntry(name: String(entry.name.dropLast()) + "z", offset: 0, size: storedSize)
+        let restored = try Self(archive: target, entry: member).digest(control: control) { progress(0.55 + 0.45*$0) }
+        guard restored == Data(hash.finalize()) else { throw PatchError("The compressed copy failed its restore check.") }
+        keep = true
+        return storedSize
+    }
+}
