@@ -56,7 +56,7 @@ import Foundation
             let info = try e.inspect(output)
             try expect(try e.verify(info).checked > 0, "the compressed copy passes the original game metadata checks")
             if input == cartridge {
-                let report = try patcher.run(["-i", "-t", "xci", "--disablekeywarns", output.path], working: root, allowUnsigned: true)
+                let report = try patcher.run(["-i", "-t", "xci", "-k", keys.path, "--disablekeywarns", output.path], working: root, allowUnsigned: true)
                 try expect(report.contains("update") && report.contains(".ncz"), "hactool independently reads the compressed cartridge partitions")
                 let sourcePartitions = try ContainerLayout(input).cartridge!.partitions
                 let copyPartitions = try ContainerLayout(output).cartridge!.partitions

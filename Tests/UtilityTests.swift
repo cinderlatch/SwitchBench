@@ -88,10 +88,11 @@ import CommonCrypto
         } else { data.append(compress(plain)) }
         return (data,original)
     }
-    static func cartridge(_ names:[String],_ data:[Data],padding:Int=4096,withUpdatePartition:Bool=false)->Data {
+    static func cartridge(_ names:[String],_ data:[Data],padding:Int=4096,withOtherPartitions:Bool=false)->Data {
         let secure=try! container(names,data,hashed:true)
         let update=try! container(["notes.txt"],[Data("Cartridge update partition".utf8)],hashed:true)
-        let root=try! withUpdatePartition ? container(["secure","update"],[secure,update],hashed:true) : container(["secure"],[secure],hashed:true)
+        let normal=try! container(["notes.txt"],[Data("Cartridge normal partition".utf8)],hashed:true)
+        let root=try! withOtherPartitions ? container(["normal","secure","update"],[normal,secure,update],hashed:true) : container(["secure"],[secure],hashed:true)
         var out=Data(repeating:0,count:0xF000);out.replaceSubrange(0x100..<0x104,with:Data("HEAD".utf8))
         func set(_ offset:Int,_ value:UInt64) { var d=Data();d.appendLE(value,bytes:8);out.replaceSubrange(offset..<(offset+8),with:d) }
         let used=((out.count+root.count+0x1FF)/0x200)*0x200
@@ -331,7 +332,7 @@ import CommonCrypto
             try fm.copyItem(at:xci,to:output)
             let game = try PFSArchive(target.appendingPathComponent("Sample Game.nsp"))
             let members = try game.entries.map { try game.read($0, limit: Int($0.size)) }
-            try cartridge(game.entries.map(\.name), members, withUpdatePartition: true)
+            try cartridge(game.entries.map(\.name), members, withOtherPartitions: true)
                 .write(to: target.appendingPathComponent("Compressible Cartridge.xci"))
             let parts=target.appendingPathComponent("Sample Parts")
             if fm.fileExists(atPath:parts.path) { try fm.removeItem(at:parts) };try fm.copyItem(at:intact,to:parts)

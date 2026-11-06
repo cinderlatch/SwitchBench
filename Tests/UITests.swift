@@ -65,7 +65,7 @@ import SwiftUI
         let reopened=UtilityModel(defaults:defaults,automaticPreparation:false)
         try expect(reopened.activeTool == .convert,"the actual saved preference restores the last-used tool")
         try expect(UtilityTool.convert.action(count:3)=="Convert 3 Files" && UtilityTool.combine.action(count:5)=="Create Combined File","actions use meaningful counts and one combined output")
-        try expect(UtilityTool.destinations(for:URL(fileURLWithPath:"/tmp/game.nsp")) == [.inspect,.update,.combine,.split],"NSP handoff offers only useful next tools")
+        try expect(UtilityTool.destinations(for:URL(fileURLWithPath:"/tmp/game.nsp")) == [.inspect,.update,.combine,.split,.compress],"NSP handoff offers only useful next tools")
         try expect(UtilityTool.destinations(for:URL(fileURLWithPath:"/tmp/game.nsp.00")) == [.join],"split parts hand off to Join instead of unsupported tools")
         m.activate(.convert);let previous=m.inputs
         m.add(.convert,urls:[URL(fileURLWithPath:"/tmp/unsupported.txt")],replacing:true)
